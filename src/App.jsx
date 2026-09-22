@@ -81,10 +81,10 @@ export default function App() {
 
   // Upload & Mapping Flow State
   const [currentUploadFile, setCurrentUploadFile] = useState({
-    fileName: 'Bordero_TriPakarta_Fire_Q3_2026.xlsx',
-    fileSize: '1.8 MB',
-    cob: 'Fire & Property',
-    mappingTemplate: 'Format Standar Bordero TriPakarta Fire 2026'
+    fileName: 'mr11_raw_data_export.xlsx',
+    fileSize: '41.4 MB',
+    cob: 'Marine Hull',
+    mappingTemplate: 'Template Akseptasi (Marine Hull)'
   });
 
   // AI Modal State
@@ -247,7 +247,7 @@ export default function App() {
     headerSubtitle = 'SAS Viya Embed Mode (Full Screen)';
   } else if (activeTab === 'mapping' || activeTab === 'upload-mapping') {
     headerTitle = 'Mapping';
-    headerSubtitle = 'Konfigurasi Pemetaan Kolom Bordero';
+    headerSubtitle = 'Konfigurasi Pemetaan Kolom COB Marine Hull (MR11 Raw)';
   } else if (activeTab === 'upload') {
     headerTitle = 'Upload';
   } else if (activeTab === 'history') {

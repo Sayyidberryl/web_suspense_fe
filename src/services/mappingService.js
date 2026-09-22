@@ -1,43 +1,135 @@
 import apiClient from './apiClient';
+import mr11ColumnsRaw from './mr11_columns.json';
 
-export const DEFAULT_MAPPINGS = [
-  { no: 1, standard_name: "NO", excel_col: "No", field_db: "no", data_type: "BIGINT", status: "mapped", is_optional: false },
-  { no: 2, standard_name: "COB", excel_col: "COB", field_db: "cob", data_type: "TEXT", status: "mapped", is_optional: false },
-  { no: 3, standard_name: "CLAIM REFFERENCE NUMBER", excel_col: "REGISTER NO.", field_db: "claim_ref_number", data_type: "TEXT", status: "mapped", is_optional: false },
-  { no: 4, standard_name: "POLICY NUMBER", excel_col: "POLICY NUMBER", field_db: "policy_number", data_type: "TEXT", status: "mapped", is_optional: false },
-  { no: 5, standard_name: "CERTIFICATE NUMBER", excel_col: "-- Pilih Kolom Excel --", field_db: "certificate_number", data_type: "TEXT", status: "optional", is_optional: true },
-  { no: 6, standard_name: "Reff No of Bordereaux\n(premium cession)", excel_col: "-- Pilih Kolom Excel --", field_db: "reff_bordereaux_premium", data_type: "TEXT", status: "optional", is_optional: true },
-  { no: 7, standard_name: "INSURED NAME", excel_col: "NAMA TERTANGGUNG", field_db: "insured_name", data_type: "TEXT", status: "mapped", is_optional: false },
-  { no: 8, standard_name: "SUM INSURED (ORIGINAL CURRENCY)", excel_col: "TSI ORIGINAL", field_db: "tsi_original", data_type: "NUMERIC", status: "mapped", is_optional: false }
-];
-
+// Unique list of MR11 raw columns
 export const AVAILABLE_EXCEL_COLUMNS = [
-  "-- Pilih Kolom Excel --",
-  "No",
-  "COB",
-  "REGISTER NO.",
-  "POLICY NUMBER",
-  "CERTIFICATE NO",
-  "REFF BORDEREAUX",
-  "NAMA TERTANGGUNG",
-  "TSI ORIGINAL",
-  "SUM INSURED SHARE",
-  "PREMIUM AMOUNT",
-  "BROKER NAME",
-  "VESSEL CODE",
-  "VESSEL NAME",
-  "LOSS CAUSE",
-  "DATE OF LOSS"
+  '-- Pilih Kolom Excel --',
+  ...mr11ColumnsRaw.filter(Boolean)
 ];
 
-let localTemplates = [
+// 1. Template Akseptasi (Marine Hull) - 29 Columns (Schema: FACUL_ETL_MH_AKSEPTASI)
+export const MAPPINGS_AKSEPTASI_MH = [
+  { no: 1, standard_name: 'Fac Code', excel_col: 'fac_code', field_db: 'fac_code', data_type: 'VARCHAR', status: 'mapped', is_optional: false },
+  { no: 2, standard_name: 'Reff Number', excel_col: 'fac_old_ref', field_db: 'reff_number', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 3, standard_name: 'Direct', excel_col: 'fac_cedant', field_db: 'direct', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 4, standard_name: 'Broker', excel_col: 'fac_broker', field_db: 'broker', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 5, standard_name: 'Nama Tertanggung', excel_col: 'fac_insured', field_db: 'nama_tertanggung', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 6, standard_name: 'Afiliasi Tertanggung', excel_col: 'fac_insured_code', field_db: 'afiliasi_tertanggung', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 7, standard_name: 'Coverage', excel_col: 'fac_cover', field_db: 'coverage', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 8, standard_name: 'Start Date', excel_col: 'fac_com_date', field_db: 'start_date', data_type: 'DATE', status: 'mapped', is_optional: false },
+  { no: 9, standard_name: 'End Date', excel_col: 'fac_exp_date', field_db: 'end_date', data_type: 'DATE', status: 'mapped', is_optional: false },
+  { no: 10, standard_name: 'Acceptance Status', excel_col: 'fac_acc_sts', field_db: 'acceptance_status', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 11, standard_name: 'Nama Kapal', excel_col: 'fac_vessel', field_db: 'nama_kapal', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 12, standard_name: 'Type of Vessel', excel_col: 'fac_c_hull', field_db: 'type_of_vessel', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 13, standard_name: 'Code Kapal', excel_col: 'fac_coycode', field_db: 'code_kapal', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 14, standard_name: 'Size of Vessel', excel_col: 'fac_tonage', field_db: 'size_of_vessel', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 15, standard_name: 'Year of Built', excel_col: 'fac_old', field_db: 'year_of_built', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 16, standard_name: 'Type of Material', excel_col: 'fac_constr', field_db: 'type_of_material', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 17, standard_name: 'Classification', excel_col: 'fac_classifi', field_db: 'classification', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 18, standard_name: 'Flag', excel_col: 'fac_sterr', field_db: 'flag', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 19, standard_name: 'Last Docking Date', excel_col: 'fac_doc_date', field_db: 'last_docking_date', data_type: 'DATE', status: 'mapped', is_optional: true },
+  { no: 20, standard_name: 'Jenis Muatan', excel_col: 'fac_cargo', field_db: 'jenis_muatan', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 21, standard_name: 'Trading Area', excel_col: 'fac_territory', field_db: 'trading_area', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 22, standard_name: 'Currency', excel_col: 'fac_currency', field_db: 'currency', data_type: 'VARCHAR', status: 'mapped', is_optional: false },
+  { no: 23, standard_name: 'Insured value', excel_col: 'fac_totsi', field_db: 'insured_value', data_type: 'NUMERIC', status: 'mapped', is_optional: false },
+  { no: 24, standard_name: 'Premium Rate', excel_col: 'fac_prem_rate', field_db: 'premium_rate', data_type: 'NUMERIC', status: 'mapped', is_optional: false },
+  { no: 25, standard_name: 'Premium Amount', excel_col: 'fac_gpremium', field_db: 'premium_amount', data_type: 'NUMERIC', status: 'mapped', is_optional: false },
+  { no: 26, standard_name: 'RIC', excel_col: 'fac_mra_code', field_db: 'ric', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 27, standard_name: 'RIU Share', excel_col: 'fac_wrt_shr', field_db: 'riu_share', data_type: 'NUMERIC', status: 'mapped', is_optional: false },
+  { no: 28, standard_name: 'RIU Gross Premium', excel_col: 'fac_gpremium', field_db: 'riu_gross_premium', data_type: 'NUMERIC', status: 'mapped', is_optional: false },
+  { no: 29, standard_name: 'RIU Net Premium', excel_col: 'fac_npremium', field_db: 'riu_net_premium', data_type: 'NUMERIC', status: 'mapped', is_optional: false }
+];
+
+// 2. Template Loss PLA (Marine Hull) - 24 Columns (Schema: FACUL_ETL_MH_LOSS_PLA)
+export const MAPPINGS_LOSS_PLA_MH = [
+  { no: 1, standard_name: 'Fac Code', excel_col: 'fac_code', field_db: 'fac_code', data_type: 'VARCHAR', status: 'mapped', is_optional: false },
+  { no: 2, standard_name: 'Reff Number', excel_col: 'fac_old_ref', field_db: 'reff_number', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 3, standard_name: 'Direct', excel_col: 'fac_cedant', field_db: 'direct', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 4, standard_name: 'Broker', excel_col: 'fac_broker', field_db: 'broker', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 5, standard_name: 'Nama Tertanggung', excel_col: 'fac_insured', field_db: 'nama_tertanggung', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 6, standard_name: 'Afiliasi Tertanggung', excel_col: 'fac_insured_code', field_db: 'afiliasi_tertanggung', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 7, standard_name: 'Nama Tertanngung yang Loss', excel_col: 'fac_insured', field_db: 'nama_tertanngung_loss', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 8, standard_name: 'Nama Kapal', excel_col: 'fac_vessel', field_db: 'nama_kapal', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 9, standard_name: 'Type of Vessel', excel_col: 'fac_c_hull', field_db: 'type_of_vessel', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 10, standard_name: 'Code Kapal', excel_col: 'fac_coycode', field_db: 'code_kapal', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 11, standard_name: 'Size of Vessel', excel_col: 'fac_tonage', field_db: 'size_of_vessel', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 12, standard_name: 'Year of Built', excel_col: 'fac_old', field_db: 'year_of_built', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 13, standard_name: 'Type of Material', excel_col: 'fac_constr', field_db: 'type_of_material', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 14, standard_name: 'Classification', excel_col: 'fac_classifi', field_db: 'classification', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 15, standard_name: 'Flag', excel_col: 'fac_sterr', field_db: 'flag', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 16, standard_name: 'Last Docking Date', excel_col: 'fac_doc_date', field_db: 'last_docking_date', data_type: 'DATE', status: 'mapped', is_optional: true },
+  { no: 17, standard_name: 'Jenis Muatan', excel_col: 'fac_cargo', field_db: 'jenis_muatan', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 18, standard_name: 'RIU Share', excel_col: 'fac_wrt_shr', field_db: 'riu_share', data_type: 'NUMERIC', status: 'mapped', is_optional: false },
+  { no: 19, standard_name: 'Date of Loss or UW Year', excel_col: 'fac_doc_date', field_db: 'date_of_loss', data_type: 'DATE', status: 'mapped', is_optional: false },
+  { no: 20, standard_name: 'Currency', excel_col: 'fac_currency', field_db: 'currency', data_type: 'VARCHAR', status: 'mapped', is_optional: false },
+  { no: 21, standard_name: 'OUR LOSS Amount', excel_col: 'fac_our_amt', field_db: 'loss_amount', data_type: 'NUMERIC', status: 'mapped', is_optional: false },
+  { no: 22, standard_name: 'Cause of Loss', excel_col: 'fac_risk', field_db: 'loss_cause', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 23, standard_name: 'LOSS DETAIL', excel_col: 'fac_desc', field_db: 'loss_detail', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 24, standard_name: 'Settled or OS', excel_col: 'fac_acc_sts', field_db: 'settled_or_os', data_type: 'TEXT', status: 'mapped', is_optional: false }
+];
+
+// 3. Template Loss SLA (Marine Hull) - 24 Columns (Schema: FACUL_ETL_MH_LOSS_SETTLE)
+export const MAPPINGS_LOSS_SLA_MH = [
+  { no: 1, standard_name: 'Fac Code', excel_col: 'fac_code', field_db: 'fac_code', data_type: 'VARCHAR', status: 'mapped', is_optional: false },
+  { no: 2, standard_name: 'Reff Number', excel_col: 'fac_old_ref', field_db: 'reff_number', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 3, standard_name: 'Direct', excel_col: 'fac_cedant', field_db: 'direct', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 4, standard_name: 'Broker', excel_col: 'fac_broker', field_db: 'broker', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 5, standard_name: 'Nama Tertanggung', excel_col: 'fac_insured', field_db: 'nama_tertanggung', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 6, standard_name: 'Afiliasi Tertanggung', excel_col: 'fac_insured_code', field_db: 'afiliasi_tertanggung', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 7, standard_name: 'Nama Tertanngung yang Loss', excel_col: 'fac_insured', field_db: 'nama_tertanngung_loss', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 8, standard_name: 'Nama Kapal', excel_col: 'fac_vessel', field_db: 'nama_kapal', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 9, standard_name: 'Type of Vessel', excel_col: 'fac_c_hull', field_db: 'type_of_vessel', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 10, standard_name: 'Code Kapal', excel_col: 'fac_coycode', field_db: 'code_kapal', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 11, standard_name: 'Size of Vessel', excel_col: 'fac_tonage', field_db: 'size_of_vessel', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 12, standard_name: 'Year of Built', excel_col: 'fac_old', field_db: 'year_of_built', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 13, standard_name: 'Type of Material', excel_col: 'fac_constr', field_db: 'type_of_material', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 14, standard_name: 'Classification', excel_col: 'fac_classifi', field_db: 'classification', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 15, standard_name: 'Flag', excel_col: 'fac_sterr', field_db: 'flag', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 16, standard_name: 'Last Docking Date', excel_col: 'fac_doc_date', field_db: 'last_docking_date', data_type: 'DATE', status: 'mapped', is_optional: true },
+  { no: 17, standard_name: 'Jenis Muatan', excel_col: 'fac_cargo', field_db: 'jenis_muatan', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 18, standard_name: 'RIU Share', excel_col: 'fac_wrt_shr', field_db: 'riu_share', data_type: 'NUMERIC', status: 'mapped', is_optional: false },
+  { no: 19, standard_name: 'Date of Loss or UW Year', excel_col: 'fac_doc_date', field_db: 'date_of_loss', data_type: 'DATE', status: 'mapped', is_optional: false },
+  { no: 20, standard_name: 'Currency', excel_col: 'fac_currency', field_db: 'currency', data_type: 'VARCHAR', status: 'mapped', is_optional: false },
+  { no: 21, standard_name: 'OUR LOSS Amount', excel_col: 'fac_our_amt', field_db: 'loss_amount', data_type: 'NUMERIC', status: 'mapped', is_optional: false },
+  { no: 22, standard_name: 'Cause of Loss', excel_col: 'fac_risk', field_db: 'loss_cause', data_type: 'TEXT', status: 'mapped', is_optional: false },
+  { no: 23, standard_name: 'LOSS DETAIL', excel_col: 'fac_desc', field_db: 'loss_detail', data_type: 'TEXT', status: 'mapped', is_optional: true },
+  { no: 24, standard_name: 'Settled or OS', excel_col: 'fac_acc_sts', field_db: 'settled_or_os', data_type: 'TEXT', status: 'mapped', is_optional: false }
+];
+
+export const DEFAULT_MAPPINGS = MAPPINGS_AKSEPTASI_MH;
+
+// 3 Default System Templates for Marine Hull
+export const SYSTEM_TEMPLATES = [
   {
     id: 1,
-    name: "Format Standar Bordero TriPakarta Fire 2026",
-    target_schema: "ipr_stage_db",
-    mappings: DEFAULT_MAPPINGS
+    name: 'Template Akseptasi (Marine Hull)',
+    cob: 'Marine Hull',
+    target_schema: 'FACUL_ETL_MH_AKSEPTASI',
+    column_count: 29,
+    description: 'Pemetaan skema akseptasi dan underwriting Marine Hull',
+    mappings: MAPPINGS_AKSEPTASI_MH
+  },
+  {
+    id: 2,
+    name: 'Template Loss PLA (Marine Hull)',
+    cob: 'Marine Hull',
+    target_schema: 'FACUL_ETL_MH_LOSS_PLA',
+    column_count: 24,
+    description: 'Pemetaan klaim awal / Preliminary Loss Advice (OS)',
+    mappings: MAPPINGS_LOSS_PLA_MH
+  },
+  {
+    id: 3,
+    name: 'Template Loss SLA (Marine Hull)',
+    cob: 'Marine Hull',
+    target_schema: 'FACUL_ETL_MH_LOSS_SETTLE',
+    column_count: 24,
+    description: 'Pemetaan klaim lunas / Settled Loss Advice',
+    mappings: MAPPINGS_LOSS_SLA_MH
   }
 ];
+
+let localTemplates = [...SYSTEM_TEMPLATES];
 
 export const mappingService = {
   async getTemplates() {
@@ -76,12 +168,138 @@ export const mappingService = {
     }
   },
 
-  getDefaultMappings() {
-    return JSON.parse(JSON.stringify(DEFAULT_MAPPINGS));
+  getTemplateByName(templateName) {
+    const found = localTemplates.find((t) => t.name === templateName);
+    return found || SYSTEM_TEMPLATES[0];
+  },
+
+  getDefaultMappings(templateName) {
+    const template = this.getTemplateByName(templateName);
+    return JSON.parse(JSON.stringify(template.mappings || MAPPINGS_AKSEPTASI_MH));
   },
 
   getAvailableExcelColumns() {
     return [...AVAILABLE_EXCEL_COLUMNS];
+  },
+
+  // Auto match standard attributes with MR11 raw columns
+  autoMatchRow(row, templateName) {
+    const isAkseptasi = templateName ? templateName.includes('Akseptasi') : true;
+    const isLoss = templateName ? (templateName.includes('PLA') || templateName.includes('SLA') || templateName.includes('Loss')) : false;
+
+    let match = '-- Pilih Kolom Excel --';
+
+    switch (row.field_db) {
+      case 'fac_code':
+        match = 'fac_code';
+        break;
+      case 'reff_number':
+        match = 'fac_old_ref';
+        break;
+      case 'direct':
+        match = 'fac_cedant';
+        break;
+      case 'broker':
+        match = 'fac_broker';
+        break;
+      case 'nama_tertanggung':
+        match = 'fac_insured';
+        break;
+      case 'afiliasi_tertanggung':
+        match = 'fac_insured_code';
+        break;
+      case 'nama_tertanngung_loss':
+        match = 'fac_insured';
+        break;
+      case 'coverage':
+        match = 'fac_cover';
+        break;
+      case 'start_date':
+        match = 'fac_com_date';
+        break;
+      case 'end_date':
+        match = 'fac_exp_date';
+        break;
+      case 'acceptance_status':
+        match = 'fac_acc_sts';
+        break;
+      case 'nama_kapal':
+        match = 'fac_vessel';
+        break;
+      case 'type_of_vessel':
+        match = 'fac_c_hull';
+        break;
+      case 'code_kapal':
+        match = 'fac_coycode';
+        break;
+      case 'size_of_vessel':
+        match = 'fac_tonage';
+        break;
+      case 'year_of_built':
+        match = 'fac_old';
+        break;
+      case 'type_of_material':
+        match = 'fac_constr';
+        break;
+      case 'classification':
+        match = 'fac_classifi';
+        break;
+      case 'flag':
+        match = 'fac_sterr';
+        break;
+      case 'last_docking_date':
+        match = 'fac_doc_date';
+        break;
+      case 'jenis_muatan':
+        match = 'fac_cargo';
+        break;
+      case 'trading_area':
+        match = 'fac_territory';
+        break;
+      case 'currency':
+        match = 'fac_currency';
+        break;
+      case 'insured_value':
+        match = 'fac_totsi';
+        break;
+      case 'premium_rate':
+        match = 'fac_prem_rate';
+        break;
+      case 'premium_amount':
+        match = 'fac_gpremium';
+        break;
+      case 'ric':
+        match = 'fac_mra_code';
+        break;
+      case 'riu_share':
+        match = 'fac_wrt_shr';
+        break;
+      case 'riu_gross_premium':
+        match = 'fac_gpremium';
+        break;
+      case 'riu_net_premium':
+        match = 'fac_npremium';
+        break;
+      case 'date_of_loss':
+        match = 'fac_doc_date';
+        break;
+      case 'loss_amount':
+        match = 'fac_our_amt';
+        break;
+      case 'loss_cause':
+        match = 'fac_risk';
+        break;
+      case 'loss_detail':
+        match = 'fac_desc';
+        break;
+      case 'settled_or_os':
+        match = 'fac_acc_sts';
+        break;
+      default:
+        match = row.excel_col || '-- Pilih Kolom Excel --';
+    }
+
+    return match;
   }
 };
 

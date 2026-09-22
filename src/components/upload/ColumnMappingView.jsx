@@ -1,33 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, RotateCcw, Sparkles } from 'lucide-react';
-import mappingService, { DEFAULT_MAPPINGS, AVAILABLE_EXCEL_COLUMNS } from '../../services/mappingService';
+import { ArrowRight, RotateCcw, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
+import mappingService, {
+  AVAILABLE_EXCEL_COLUMNS,
+  SYSTEM_TEMPLATES
+} from '../../services/mappingService';
 import '../../styles/mapping.css';
 
 export default function ColumnMappingView({
   fileInfo = {
-    fileName: 'Bordero_TriPakarta_Fire_Q3_2026.xlsx',
-    fileSize: '1.8 MB',
-    cob: 'Fire & Property',
-    mappingTemplate: 'Format Standar Bordero TriPakarta Fire 2026'
+    fileName: 'mr11_raw_data_export.xlsx',
+    fileSize: '41.4 MB',
+    cob: 'Marine Hull',
+    mappingTemplate: 'Template Akseptasi (Marine Hull)'
   },
   onBack,
   onCancel,
   onStartParsing
 }) {
-  const [templates, setTemplates] = useState([]);
+  const [templates, setTemplates] = useState(SYSTEM_TEMPLATES);
   const [selectedTemplateName, setSelectedTemplateName] = useState(
-    fileInfo.mappingTemplate || 'Format Standar Bordero TriPakarta Fire 2026'
+    fileInfo.mappingTemplate || 'Template Akseptasi (Marine Hull)'
   );
-  const [mappings, setMappings] = useState(DEFAULT_MAPPINGS);
+  const [mappings, setMappings] = useState(() =>
+    mappingService.getDefaultMappings(fileInfo.mappingTemplate || 'Template Akseptasi (Marine Hull)')
+  );
   const [notification, setNotification] = useState('');
 
   useEffect(() => {
     async function loadTemplates() {
       const list = await mappingService.getTemplates();
-      setTemplates(list);
+      if (list && list.length > 0) {
+        setTemplates(list);
+      }
     }
     loadTemplates();
   }, []);
+
+  const handleTemplateChange = (newName) => {
+    setSelectedTemplateName(newName);
+    const newMappings = mappingService.getDefaultMappings(newName);
+    setMappings(newMappings);
+    showNotice(`Template diubah ke: ${newName} (${newMappings.length} kolom)`);
+  };
 
   const handleColumnChange = (no, newExcelCol) => {
     setMappings((prev) =>
@@ -48,51 +62,67 @@ export default function ColumnMappingView({
   const handleAutoMatch = () => {
     setMappings((prev) =>
       prev.map((row) => {
-        let bestMatch = row.excel_col;
-        if (row.standard_name === 'NO') bestMatch = 'No';
-        else if (row.standard_name === 'COB') bestMatch = 'COB';
-        else if (row.standard_name.includes('CLAIM')) bestMatch = 'REGISTER NO.';
-        else if (row.standard_name.includes('POLICY')) bestMatch = 'POLICY NUMBER';
-        else if (row.standard_name.includes('CERTIFICATE')) bestMatch = 'CERTIFICATE NO';
-        else if (row.standard_name.includes('Reff No')) bestMatch = 'REFF BORDEREAUX';
-        else if (row.standard_name.includes('INSURED NAME')) bestMatch = 'NAMA TERTANGGUNG';
-        else if (row.standard_name.includes('SUM INSURED')) bestMatch = 'TSI ORIGINAL';
-
+        const bestMatch = mappingService.autoMatchRow(row, selectedTemplateName);
+        const isMapped = bestMatch !== '-- Pilih Kolom Excel --';
         return {
           ...row,
           excel_col: bestMatch,
-          status: bestMatch !== '-- Pilih Kolom Excel --' ? 'mapped' : row.is_optional ? 'optional' : 'unmapped'
+          status: isMapped ? 'mapped' : row.is_optional ? 'optional' : 'unmapped'
         };
       })
     );
-    showNotice('Kolom berhasil dicocokkan otomatis (Auto-Matched 8 kolom)!');
+    showNotice(`Kolom berhasil dicocokkan otomatis (${mappings.length} kolom dari MR11 Raw)!`);
   };
 
   const handleReset = () => {
-    setMappings(
-      DEFAULT_MAPPINGS.map((m) => ({
+    setMappings((prev) =>
+      prev.map((m) => ({
         ...m,
         excel_col: '-- Pilih Kolom Excel --',
         status: m.is_optional ? 'optional' : 'unmapped'
       }))
     );
-    showNotice('Pemetaan kolom telah direset.');
+    showNotice('Pemetaan kolom telah direset ke status kosong.');
   };
+
+  const currentTemplate = mappingService.getTemplateByName(selectedTemplateName);
+  const targetSchema = currentTemplate.target_schema || 'FACUL_ETL_MH_AKSEPTASI';
 
   const handleSaveTemplate = async () => {
     await mappingService.saveTemplate({
       name: selectedTemplateName,
-      target_schema: 'ipr_stage_db',
+      cob: 'Marine Hull',
+      target_schema: targetSchema,
+      column_count: mappings.length,
       mappings
     });
     showNotice(`Template '${selectedTemplateName}' berhasil disimpan.`);
   };
 
   const handleAddTemplate = () => {
-    const newName = prompt('Masukkan nama template konfigurasi pemetaan baru:');
+    const newName = prompt('Masukkan nama template konfigurasi pemetaan baru (Marine Hull):');
     if (newName && newName.trim()) {
-      setSelectedTemplateName(newName.trim());
-      handleSaveTemplate();
+      const trimmed = newName.trim();
+      setSelectedTemplateName(trimmed);
+      mappingService.saveTemplate({
+        name: trimmed,
+        cob: 'Marine Hull',
+        target_schema: targetSchema,
+        column_count: mappings.length,
+        mappings
+      });
+      setTemplates((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          name: trimmed,
+          cob: 'Marine Hull',
+          target_schema: targetSchema,
+          column_count: mappings.length,
+          mappings
+        }
+      ]);
+      showNotice(`Template baru '${trimmed}' berhasil dibuat.`);
     }
   };
 
@@ -114,20 +144,42 @@ export default function ColumnMappingView({
           padding: '10px 18px',
           borderRadius: '10px',
           fontSize: '0.85rem',
-          fontWeight: 600
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
         }}>
-          {notification}
+          <CheckCircle2 size={16} color="#2563eb" />
+          <span>{notification}</span>
         </div>
       )}
 
-      {/* Top 2 Cards: Mapping Controls & File Input (Mockup 3) */}
+      {/* Top 2 Cards: Mapping Controls & File Input */}
       <div className="mapping-top-grid">
         {/* Dark Mapping Bar */}
         <div className="mapping-control-card">
           <div className="mapping-control-header">
-            <h2 className="mapping-control-title">Mapping</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h2 className="mapping-control-title">Mapping</h2>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(16, 185, 129, 0.15)',
+                color: '#34d399',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                padding: '3px 10px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 600
+              }}>
+                <ShieldCheck size={13} />
+                <span>COB: Marine Hull (Tersedia)</span>
+              </div>
+            </div>
+
             <div className="target-schema-tag">
-              Target Schema: <strong>ipr_stage_db</strong>
+              Target Schema: <strong>{targetSchema}</strong>
             </div>
           </div>
 
@@ -135,29 +187,25 @@ export default function ColumnMappingView({
             <select
               className="mapping-template-select"
               value={selectedTemplateName}
-              onChange={(e) => setSelectedTemplateName(e.target.value)}
+              onChange={(e) => handleTemplateChange(e.target.value)}
             >
-              <option value="Format Standar Bordero TriPakarta Fire 2026">
-                Format Standar Bordero TriPakarta Fire 2026
-              </option>
-              {templates
-                .filter((t) => t.name !== 'Format Standar Bordero TriPakarta Fire 2026')
-                .map((t) => (
-                  <option key={t.id || t.name} value={t.name}>
-                    {t.name}
-                  </option>
-                ))}
+              {templates.map((t) => (
+                <option key={t.id || t.name} value={t.name}>
+                  {t.name} ({t.mappings ? t.mappings.length : t.column_count || 24} Kolom)
+                </option>
+              ))}
             </select>
 
-            <button className="btn-ctrl-action" onClick={handleAddTemplate}>
+            <button className="btn-ctrl-action" onClick={handleAddTemplate} title="Tambah template baru">
               Add
             </button>
-            <button className="btn-ctrl-action" onClick={handleSaveTemplate}>
+            <button className="btn-ctrl-action" onClick={handleSaveTemplate} title="Simpan template saat ini">
               Save
             </button>
             <button
               className="btn-ctrl-action delete-btn"
-              onClick={() => showNotice('Template default sistem dilindungi.')}
+              onClick={() => showNotice('Template default sistem dilindungi dan tidak dapat dihapus.')}
+              title="Hapus template"
             >
               Delete
             </button>
@@ -167,7 +215,7 @@ export default function ColumnMappingView({
         {/* File Input Card */}
         <div className="file-input-card">
           <div className="file-input-header">
-            <span className="file-input-title">FILE INPUT</span>
+            <span className="file-input-title">FILE INPUT CONTOH</span>
             <span className="badge-tag-ready">Siap Dipetakan</span>
           </div>
 
@@ -175,8 +223,8 @@ export default function ColumnMappingView({
             <div className="file-badge-left">
               <span className="xls-icon-box">XLS</span>
               <div className="file-badge-texts">
-                <h4>{fileInfo.fileName || 'Bordero_TriPakarta_Fire_Q3_2026.xlsx'}</h4>
-                <p>{fileInfo.fileSize || '1.8 MB'} • 24 Kolom Terdeteksi</p>
+                <h4>{fileInfo.fileName || 'mr11_raw_data_export.xlsx'}</h4>
+                <p>{fileInfo.fileSize || '41.4 MB'} • 179 Kolom Terdeteksi (MR11 Raw)</p>
               </div>
             </div>
 
@@ -187,30 +235,41 @@ export default function ColumnMappingView({
         </div>
       </div>
 
-      {/* Column Mapping Configuration Table (Mockup 3) */}
+      {/* Column Mapping Configuration Table */}
       <div className="mapping-table-card">
         <div className="mapping-table-header">
           <div>
             <h3 className="mapping-table-title">Tabel Konfigurasi Pemetaan Kolom</h3>
             <p className="mapping-table-subtitle">
-              Petakan kolom sumber excel ke format atribut standar database IPR
+              Petakan 179 kolom sumber dari <code>mr11_raw_data_export.xlsx</code> ke atribut database <strong>{targetSchema}</strong> ({mappings.length} kolom).
             </p>
           </div>
 
           <div className="mapping-stats-badges">
             <span className="stat-pill mapped">{mappedCount} Terpetakan</span>
             <span className="stat-pill optional">{optionalCount} Opsional</span>
+            <span style={{
+              background: '#f8fafc',
+              border: '1px solid #cbd5e1',
+              color: '#475569',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '0.78rem',
+              fontWeight: 600
+            }}>
+              Total: {mappings.length} Kolom
+            </span>
           </div>
         </div>
 
         <table className="mapping-table">
           <thead>
             <tr>
-              <th style={{ width: 40 }}>NO</th>
+              <th style={{ width: 45 }}>NO</th>
               <th style={{ width: 280 }}>FORMAT STANDAR IPR</th>
-              <th style={{ width: 280 }}>KOLOM SUMBER (EXCEL)</th>
+              <th style={{ width: 300 }}>KOLOM SUMBER (EXCEL MR11 RAW)</th>
               <th style={{ width: 220 }}>FIELD DATABASE</th>
-              <th style={{ width: 120 }}>TIPE DATA</th>
+              <th style={{ width: 110 }}>TIPE DATA</th>
             </tr>
           </thead>
           <tbody>
@@ -221,8 +280,11 @@ export default function ColumnMappingView({
 
               return (
                 <tr key={row.no} className={`mapping-row ${statusClass}`}>
-                  <td style={{ fontWeight: 700, color: '#334155' }}>{row.no}</td>
-                  <td className="standard-name-cell">{row.standard_name}</td>
+                  <td style={{ fontWeight: 700, color: '#334155', textAlign: 'center' }}>{row.no}</td>
+                  <td className="standard-name-cell">
+                    <strong>{row.standard_name}</strong>
+                    {isOptional && <span style={{ marginLeft: 6, fontSize: '0.7rem', color: '#94a3b8' }}>(Opsional)</span>}
+                  </td>
                   <td>
                     <select
                       className={`excel-col-select ${!isMapped ? 'optional-select' : ''}`}
@@ -257,7 +319,7 @@ export default function ColumnMappingView({
             </button>
             <button className="btn-secondary-action" onClick={handleAutoMatch}>
               <Sparkles size={14} style={{ display: 'inline', marginRight: 6, color: '#059669' }} />
-              Auto-Match Kolom
+              Auto-Match Kolom MR11
             </button>
           </div>
 
@@ -267,7 +329,7 @@ export default function ColumnMappingView({
             </button>
             <button
               className="btn-primary-parse"
-              onClick={() => onStartParsing({ fileInfo, mappings })}
+              onClick={() => onStartParsing({ fileInfo, mappings, templateName: selectedTemplateName, targetSchema })}
             >
               <span>Simpan & Lanjutkan Parsing</span>
               <ArrowRight size={16} />
