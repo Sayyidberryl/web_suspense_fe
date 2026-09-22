@@ -9,7 +9,7 @@ export const LOSS_PLA_COLUMNS = [
   { key: 'broker', label: 'Broker' },
   { key: 'nama_tertanggung', label: 'Nama Tertanggung' },
   { key: 'afiliasi_tertanggung', label: 'Afiliasi Tertanggung' },
-  { key: 'nama_tertanggung_loss', label: 'Nama Tertanngung yang Loss' },
+  { key: 'nama_tertanngung_loss', label: 'Nama Tertanngung yang Loss' },
   { key: 'nama_kapal', label: 'Nama Kapal', isVessel: true },
   { key: 'type_of_vessel', label: 'Type of Vessel' },
   { key: 'code_kapal', label: 'Code Kapal', isCode: true },
@@ -163,19 +163,22 @@ export default function DataTable({
   };
 
   const tableTitleMap = {
-    acceptance: 'Data Akseptasi (29 Kolom Sesuai Excel)',
-    loss_pla: 'Data Loss PLA (24 Kolom Sesuai Excel)',
-    loss_sla: 'Data Loss SLA (24 Kolom Sesuai Excel)',
+    acceptance: 'Data Akseptasi',
+    loss_pla: 'Data Loss PLA',
+    loss_sla: 'Data Loss SLA',
   };
 
   if (loading) {
     return (
       <div className="table-card-container">
-        <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
+        <div style={{ padding: '64px 20px', textAlign: 'center' }}>
+          <div className="corporate-spinner" style={{ margin: '0 auto 16px' }} />
           <div style={{ fontSize: '1.05rem', fontWeight: 600, color: '#1e293b', marginBottom: 6 }}>
-            Memuat Data Real dari Supabase...
+            Memuat Data...
           </div>
-          <span style={{ fontSize: '0.85rem' }}>Mengambil {columns.length} kolom data untuk {tableTitleMap[activeTab] || activeTab}</span>
+          <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+            Menyiapkan tampilan {tableTitleMap[activeTab] || activeTab}
+          </span>
         </div>
       </div>
     );
@@ -222,14 +225,14 @@ export default function DataTable({
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: '0.82rem', color: '#2563eb' }}>
                         <span className="chunk-pulse-dot" />
                         <span>
-                          Sedang merender bertahap per 50 data (<strong>{displayedRows.length}</strong> dari <strong>{data.length}</strong> baris siap)...
+                          Sedang memproses tampilan (<strong>{displayedRows.length.toLocaleString('id-ID')}</strong> dari <strong>{data.length.toLocaleString('id-ID')}</strong> baris siap)...
                         </span>
                         <button
                           type="button"
                           className="btn-render-chunk"
                           onClick={() => setRenderedCount((prev) => Math.min(prev + CHUNK_SIZE, data.length))}
                         >
-                          + Render 50 Data Lagi
+                          + Tampilkan 50 Lagi
                         </button>
                       </div>
                     </td>
@@ -238,11 +241,11 @@ export default function DataTable({
               </>
             ) : (
               <tr>
-                <td colSpan={columns.length + 1} style={{ padding: '48px 24px', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <td colSpan={columns.length + 1} style={{ padding: '56px 24px', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                     <div style={{
-                      width: 48,
-                      height: 48,
+                      width: 52,
+                      height: 52,
                       borderRadius: '50%',
                       background: '#f8fafc',
                       border: '1px solid #e2e8f0',
@@ -253,11 +256,11 @@ export default function DataTable({
                     }}>
                       <Database size={24} />
                     </div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}>
-                      Tidak Ada Data Pada Tabel Ini
+                    <div style={{ fontSize: '0.98rem', fontWeight: 600, color: '#334155' }}>
+                      Tidak Ada Data yang Tersedia
                     </div>
-                    <p style={{ fontSize: '0.82rem', color: '#64748b', maxWidth: 460 }}>
-                      Tabel <strong>{tableTitleMap[activeTab] || activeTab}</strong> saat ini belum memiliki baris data di PostgreSQL Supabase.
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', maxWidth: 460, lineHeight: 1.5 }}>
+                      Saat ini belum terdapat catatan data pada tabel <strong>{tableTitleMap[activeTab] || activeTab}</strong> yang sesuai dengan kriteria filter.
                     </p>
                   </div>
                 </td>
@@ -267,29 +270,29 @@ export default function DataTable({
         </table>
       </div>
 
-      {/* Real Dynamic Pagination & Progressive Row Render Bar */}
+      {/* Dynamic Pagination & Progressive Row Render Bar */}
       <div className="history-pagination-bar" style={{ marginTop: 16 }}>
         <div className="pagination-left">
           {isAllMode ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span>
-                Menampilkan <strong>{Math.min(renderedCount, data.length)}</strong> dari <strong>{data.length}</strong> baris data real ({columns.length} kolom sesuai Excel)
+                Menampilkan <strong>{Math.min(renderedCount, data.length).toLocaleString('id-ID')}</strong> dari <strong>{data.length.toLocaleString('id-ID')}</strong> data
               </span>
               {renderedCount < data.length ? (
                 <span className="progressive-render-badge">
                   <span className="chunk-pulse-dot" />
-                  Merender per 50 data ({Math.min(renderedCount, data.length)}/{data.length})
+                  Memuat ({Math.min(renderedCount, data.length).toLocaleString('id-ID')} / {data.length.toLocaleString('id-ID')})
                 </span>
               ) : (
                 <span className="progressive-render-badge complete">
                   <CheckCircle2 size={13} />
-                  Semua ({data.length}) baris selesai dirender (per 50 data)
+                  Seluruh {data.length.toLocaleString('id-ID')} data siap ditampilkan
                 </span>
               )}
             </div>
           ) : (
             <span>
-              Menampilkan <strong>{startRecord} - {endRecord}</strong> dari <strong>{pagination.total}</strong> baris data ({columns.length} kolom sesuai Excel)
+              Menampilkan <strong>{startRecord.toLocaleString('id-ID')} - {endRecord.toLocaleString('id-ID')}</strong> dari <strong>{pagination.total.toLocaleString('id-ID')}</strong> data
             </span>
           )}
 
@@ -305,7 +308,7 @@ export default function DataTable({
               <option value="25">25 per halaman</option>
               <option value="50">50 per halaman</option>
               <option value="100">100 per halaman</option>
-              <option value="all">Tampilkan Semua (Render per 50)</option>
+              <option value="all">Tampilkan Semua</option>
             </select>
           </div>
         </div>
@@ -317,9 +320,9 @@ export default function DataTable({
                 type="button"
                 className="btn-render-chunk"
                 onClick={() => setRenderedCount((prev) => Math.min(prev + CHUNK_SIZE, data.length))}
-                title="Render 50 baris selanjutnya segera"
+                title="Tampilkan 50 baris selanjutnya"
               >
-                Render +50 Data
+                + Tampilkan 50 Lagi
               </button>
             )}
           </div>

@@ -40,13 +40,13 @@ export default function TopControlBar({
         </div>
 
         {/* Refresh Icon Button */}
-        <button className="icon-btn" onClick={onRefresh} title="Muat Ulang Data Real">
+        <button className="icon-btn" onClick={onRefresh} title="Perbarui Data">
           <RefreshCw size={16} />
         </button>
       </div>
 
       <div className="control-right">
-        <button className="download-btn" onClick={onExport} title="Ekspor data saat ini ke CSV">
+        <button className="download-btn" onClick={onExport} title="Unduh Data ke CSV">
           <span>Unduh Data</span>
           <Download size={16} />
         </button>

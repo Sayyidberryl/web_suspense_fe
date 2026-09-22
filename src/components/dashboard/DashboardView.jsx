@@ -28,18 +28,18 @@ export default function DashboardView({
     <div>
       {/* Welcome Section */}
       <div className="welcome-section">
-        <h1 className="welcome-title">Portal ETL & Analitik Facultative</h1>
+        <h1 className="welcome-title">Portal Intelijen &amp; Analitik Facultative</h1>
         <p className="welcome-desc">
-          Sistem analitik berbasis database PostgreSQL Supabase untuk data Marine Hull & Facultative IndonesiaRe.
+          Platform analitik terpadu untuk pengelolaan portofolio, akseptasi, dan klaim reasuransi Marine Hull IndonesiaRe.
         </p>
         <div className="welcome-actions">
           <button className="btn-welcome-upload" onClick={onNavigateToUpload}>
             <Plus size={16} />
-            <span>Upload File</span>
+            <span>Unggah Berkas</span>
           </button>
           <button className="btn-welcome-history" onClick={onNavigateToHistory}>
             <Clock size={16} />
-            <span>Lihat History</span>
+            <span>Riwayat Eksekusi</span>
           </button>
         </div>
       </div>
