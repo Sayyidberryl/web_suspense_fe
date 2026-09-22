@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SlidersHorizontal, Check, Plus, X, RotateCcw } from 'lucide-react';
+import { SlidersHorizontal, Check, X, RotateCcw } from 'lucide-react';
 
 // Definitions of all available filterable columns for each table tab
 export const TABLE_COLUMN_DEFINITIONS = {
@@ -122,7 +122,7 @@ export default function FacLensBanner({
     <div className="fac-lens-banner">
       {/* Banner Header Row */}
       <div className="banner-header-row">
-        <div className="banner-title-group">
+        <div className="banner-title-group" style={{ flex: 1, textAlign: 'center' }}>
           <h2 className="banner-title">FAC LENS</h2>
           <p className="banner-subtitle">
             Facultative Data Intelligence &amp; Analytics Dashboard
@@ -229,16 +229,7 @@ export default function FacLensBanner({
           );
         })}
 
-        {/* Quick Add Column Button */}
-        <button
-          type="button"
-          className="btn-quick-add-column"
-          onClick={() => setIsCustomizeOpen(true)}
-          title="Tambah kolom filter lainnya"
-        >
-          <Plus size={15} />
-          <span>Tambah Kolom</span>
-        </button>
+
       </div>
     </div>
   );
