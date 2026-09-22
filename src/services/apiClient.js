@@ -3,19 +3,30 @@
  * Clean architecture wrapper for consuming backend REST API or Database endpoints.
  */
 
-const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const DEFAULT_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://superetlapi.vercel.app/api').replace(/\/+$/, '');
 
 class ApiClient {
   constructor(baseUrl = DEFAULT_BASE_URL) {
-    this.baseUrl = baseUrl.replace(/\/$/, '');
+    this.baseUrl = baseUrl.replace(/\/+$/, '');
   }
 
   setBaseUrl(url) {
-    this.baseUrl = url.replace(/\/$/, '');
+    this.baseUrl = (url || DEFAULT_BASE_URL).replace(/\/+$/, '');
   }
 
-  async request(endpoint, { method = 'GET', data = null, params = {}, headers = {}, timeout = 10000 } = {}) {
-    const url = new URL(`${this.baseUrl}/${endpoint.replace(/^\//, '')}`);
+  async request(endpoint, { method = 'GET', data = null, params = {}, headers = {}, timeout = 15000 } = {}) {
+    let cleanEndpoint = (endpoint || '').replace(/^\/+/, '');
+    let base = this.baseUrl;
+
+    // Prevent duplicate /api/api if both base and endpoint have /api
+    if (base.endsWith('/api') && cleanEndpoint.startsWith('api/')) {
+      cleanEndpoint = cleanEndpoint.substring(4);
+    } else if (!base.endsWith('/api') && !cleanEndpoint.startsWith('api/') && !cleanEndpoint.startsWith('http')) {
+      cleanEndpoint = `api/${cleanEndpoint}`;
+    }
+
+    const urlStr = cleanEndpoint.startsWith('http') ? cleanEndpoint : `${base}/${cleanEndpoint}`;
+    const url = new URL(urlStr);
 
     // Append search params
     Object.entries(params).forEach(([key, value]) => {

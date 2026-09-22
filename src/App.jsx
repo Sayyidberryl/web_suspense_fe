@@ -20,6 +20,20 @@ import './styles/history.css';
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'upload' | 'upload-mapping' | 'history'
   
+  // Tab switcher for the 3 PostgreSQL tables:
+  // 'loss_pla'   -> FACUL_ETL_MH_LOSS_PLA
+  // 'acceptance' -> FACUL_ETL_MH_AKSEPTASI
+  // 'loss_sla'   -> FACUL_ETL_MH_LOSS_SETTLE
+  const [selectedTableTab, setSelectedTableTab] = useState('loss_pla');
+
+  // Dynamic Pagination
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    total: 0,
+    totalPages: 1
+  });
+
   // Filters for Dashboard FAC LENS
   const [filters, setFilters] = useState({
     facCode: '',
@@ -53,21 +67,26 @@ export default function App() {
     setLoading(true);
     try {
       const response = await facLensService.getTableData({
-        tab: 'loss_pla',
+        tab: selectedTableTab,
         filters,
-        page: 1,
-        limit: 12
+        page: pagination.page,
+        limit: pagination.limit
       });
 
       startTransition(() => {
         setTableData(response.data || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: response.total || 0,
+          totalPages: response.totalPages || 1
+        }));
       });
     } catch (err) {
       console.error('Failed to load table data:', err);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [selectedTableTab, filters, pagination.page, pagination.limit]);
 
   useEffect(() => {
     if (activeTab === 'dashboard') {
@@ -77,6 +96,41 @@ export default function App() {
 
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      facCode: '',
+      companyName: '',
+      insuredLossName: '',
+      vesselName: '',
+      vesselCode: '',
+      globalSearch: ''
+    });
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleRemoveFilter = (key) => {
+    setFilters((prev) => ({ ...prev, [key]: '' }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleSelectTableTab = (newTab) => {
+    setSelectedTableTab(newTab);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
+  };
+
+  const handleLimitChange = (newLimit) => {
+    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+  };
+
+  const handleExportData = () => {
+    facLensService.exportToCsv(tableData, `export_${selectedTableTab}_data.csv`);
   };
 
   // Upload -> Mapping Navigation
@@ -185,28 +239,36 @@ export default function App() {
         )}
 
         <main className="page-container">
-          {/* 1. Dashboard View (Mockup 5) */}
+          {/* 1. Dashboard View (Real Data from 3 PostgreSQL Tables) */}
           {activeTab === 'dashboard' && (
             <DashboardView
               tableData={tableData}
               loading={loading}
               filters={filters}
               onFilterChange={handleFilterChange}
+              onClearFilters={handleClearFilters}
+              onRemoveFilter={handleRemoveFilter}
+              selectedTableTab={selectedTableTab}
+              onSelectTableTab={handleSelectTableTab}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
               onRefresh={loadData}
+              onExport={handleExportData}
               onNavigateToUpload={() => setActiveTab('upload')}
               onNavigateToHistory={() => setActiveTab('history')}
               onSelectDetail={handleSelectRecentDetail}
             />
           )}
 
-          {/* 2. Upload Step 1 (Mockup 4) */}
+          {/* 2. Upload Step 1 */}
           {activeTab === 'upload' && (
             <UploadStepOne
               onProceedToMapping={handleProceedToMapping}
             />
           )}
 
-          {/* 3. Upload Step 2: Mapping View (Mockup 3) */}
+          {/* 3. Upload Step 2: Mapping View */}
           {activeTab === 'upload-mapping' && (
             <ColumnMappingView
               fileInfo={currentUploadFile}
@@ -216,7 +278,7 @@ export default function App() {
             />
           )}
 
-          {/* 4. History View (Mockup 2 with Card vs List Toggle) */}
+          {/* 4. History View (Real database logs) */}
           {activeTab === 'history' && (
             <HistoryView
               initialFileDetail={selectedHistoryDetail}
@@ -225,7 +287,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* AI Processing Modal (Mockup 1) */}
+      {/* AI Processing Modal */}
       <AiProcessingModal
         isOpen={isAiModalOpen}
         fileInfo={{
