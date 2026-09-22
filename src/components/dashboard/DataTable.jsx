@@ -1,5 +1,66 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Database, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Database, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+
+// Exact 24 columns for MH - Data Loss PLA and MH - Data Loss SLA (from data_mh_loss_os_pla.xlsx & data_mh_loss_settled.xlsx)
+export const LOSS_PLA_COLUMNS = [
+  { key: 'fac_code', label: 'Fac Code', bold: true },
+  { key: 'reff_number', label: 'Reff Number' },
+  { key: 'direct', label: 'Direct' },
+  { key: 'broker', label: 'Broker' },
+  { key: 'nama_tertanggung', label: 'Nama Tertanggung' },
+  { key: 'afiliasi_tertanggung', label: 'Afiliasi Tertanggung' },
+  { key: 'nama_tertanggung_loss', label: 'Nama Tertanngung yang Loss' },
+  { key: 'nama_kapal', label: 'Nama Kapal', isVessel: true },
+  { key: 'type_of_vessel', label: 'Type of Vessel' },
+  { key: 'code_kapal', label: 'Code Kapal', isCode: true },
+  { key: 'size_of_vessel', label: 'Size of Vessel' },
+  { key: 'year_of_built', label: 'Year of Built' },
+  { key: 'type_of_material', label: 'Type of Material' },
+  { key: 'classification', label: 'Classification' },
+  { key: 'flag', label: 'Flag' },
+  { key: 'last_docking_date', label: 'Last Docking Date' },
+  { key: 'jenis_muatan', label: 'Jenis Muatan' },
+  { key: 'riu_share', label: 'RIU Share' },
+  { key: 'date_of_loss', label: 'Date of Loss or UW Year' },
+  { key: 'currency', label: 'Currency' },
+  { key: 'loss_amount', label: 'OUR LOSS Amount', isAmount: true },
+  { key: 'loss_cause', label: 'Cause of Loss' },
+  { key: 'loss_detail', label: 'LOSS DETAIL' },
+  { key: 'settled_or_os', label: 'Settled or OS' }
+];
+
+// Exact 29 columns for MH - Data Akseptasi (from data_mh_akseptasi.xlsx)
+export const AKSEPTASI_COLUMNS = [
+  { key: 'fac_code', label: 'Fac Code', bold: true },
+  { key: 'reff_number', label: 'Reff Number' },
+  { key: 'direct', label: 'Direct' },
+  { key: 'broker', label: 'Broker' },
+  { key: 'nama_tertanggung', label: 'Nama Tertanggung' },
+  { key: 'afiliasi_tertanggung', label: 'Afiliasi Tertanggung' },
+  { key: 'coverage', label: 'Coverage' },
+  { key: 'start_date', label: 'Start Date' },
+  { key: 'end_date', label: 'End Date' },
+  { key: 'acceptance_status', label: 'Acceptance Status' },
+  { key: 'nama_kapal', label: 'Nama Kapal', isVessel: true },
+  { key: 'type_of_vessel', label: 'Type of Vessel' },
+  { key: 'code_kapal', label: 'Code Kapal', isCode: true },
+  { key: 'size_of_vessel', label: 'Size of Vessel' },
+  { key: 'year_of_built', label: 'Year of Built' },
+  { key: 'type_of_material', label: 'Type of Material' },
+  { key: 'classification', label: 'Classification' },
+  { key: 'flag', label: 'Flag' },
+  { key: 'last_docking_date', label: 'Last Docking Date' },
+  { key: 'jenis_muatan', label: 'Jenis Muatan' },
+  { key: 'trading_area', label: 'Trading Area' },
+  { key: 'currency', label: 'Currency' },
+  { key: 'insured_value', label: 'Insured value', isAmount: true },
+  { key: 'premium_rate', label: 'Premium Rate' },
+  { key: 'premium_amount', label: 'Premium Amount', isAmount: true },
+  { key: 'ric', label: 'RIC' },
+  { key: 'riu_share', label: 'RIU Share' },
+  { key: 'riu_gross_premium', label: 'RIU Gross Premium', isAmount: true },
+  { key: 'riu_net_premium', label: 'RIU Net Premium', isAmount: true }
+];
 
 export default function DataTable({
   data = [],
@@ -9,19 +70,11 @@ export default function DataTable({
   onPageChange,
   onLimitChange
 }) {
-  const formatAmount = (val, curr = 'IDR') => {
-    if (val === null || val === undefined || isNaN(val)) return '-';
-    return `${curr} ${Number(val).toLocaleString('id-ID')}`;
-  };
-
-  const tableTitleMap = {
-    acceptance: 'Data Akseptasi (FACUL_ETL_MH_AKSEPTASI)',
-    loss_pla: 'Data Loss PLA (FACUL_ETL_MH_LOSS_PLA)',
-    loss_sla: 'Data Loss SLA (FACUL_ETL_MH_LOSS_SETTLE)',
-  };
-
   const isAllMode = pagination.isAll || pagination.limit >= 1000;
   const CHUNK_SIZE = 50;
+
+  // Choose the column set matching the active tab
+  const columns = activeTab === 'acceptance' ? AKSEPTASI_COLUMNS : LOSS_PLA_COLUMNS;
 
   // Progressive rendering state when "Tampilkan Semua" is selected
   const [renderedCount, setRenderedCount] = useState(CHUNK_SIZE);
@@ -60,6 +113,61 @@ export default function DataTable({
     return () => observer.disconnect();
   }, [isAllMode, renderedCount, data.length]);
 
+  const renderCellValue = (row, col) => {
+    let val = row[col.key];
+
+    // Fallbacks for equivalent DB column names if any
+    if (val === undefined || val === null || val === '') {
+      if (col.key === 'settled_or_os') val = row.status;
+      else if (col.key === 'insured_value') val = row.sum_insured;
+      else if (col.key === 'acceptance_status') val = row.status;
+      else if (col.key === 'premium_amount') val = row.loss_amount;
+    }
+
+    if (val === undefined || val === null || val === '' || val === 'nan' || val === 'NaN' || val === 'None') {
+      return <span style={{ color: '#94a3b8' }}>-</span>;
+    }
+
+    if (col.isAmount) {
+      const num = Number(val);
+      if (!isNaN(num) && num !== 0) {
+        const curr = row.currency || 'IDR';
+        return <span style={{ fontWeight: 600, color: '#0f172a' }}>{curr} {num.toLocaleString('id-ID')}</span>;
+      }
+    }
+
+    if (col.isCode) {
+      return (
+        <span style={{
+          background: '#f1f5f9',
+          padding: '2px 6px',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          fontFamily: 'monospace',
+          color: '#334155'
+        }}>
+          {val}
+        </span>
+      );
+    }
+
+    if (col.isVessel) {
+      return <span style={{ fontWeight: 600, color: '#1e3a8a' }}>{val}</span>;
+    }
+
+    if (col.bold) {
+      return <span style={{ fontWeight: 600, color: '#0f172a' }}>{val}</span>;
+    }
+
+    return <span>{String(val)}</span>;
+  };
+
+  const tableTitleMap = {
+    acceptance: 'Data Akseptasi (29 Kolom Sesuai Excel)',
+    loss_pla: 'Data Loss PLA (24 Kolom Sesuai Excel)',
+    loss_sla: 'Data Loss SLA (24 Kolom Sesuai Excel)',
+  };
+
   if (loading) {
     return (
       <div className="table-card-container">
@@ -67,7 +175,7 @@ export default function DataTable({
           <div style={{ fontSize: '1.05rem', fontWeight: 600, color: '#1e293b', marginBottom: 6 }}>
             Memuat Data Real dari Supabase...
           </div>
-          <span style={{ fontSize: '0.85rem' }}>Mengambil data PostgreSQL untuk tabel {tableTitleMap[activeTab] || activeTab}</span>
+          <span style={{ fontSize: '0.85rem' }}>Mengambil {columns.length} kolom data untuk {tableTitleMap[activeTab] || activeTab}</span>
         </div>
       </div>
     );
@@ -79,23 +187,18 @@ export default function DataTable({
 
   return (
     <div className="table-card-container">
-      <div className="table-responsive-wrapper">
-        <table className="fac-table">
+      <div className="table-responsive-wrapper" style={{ overflowX: 'auto', width: '100%' }}>
+        <table className="fac-table" style={{ minWidth: columns.length * 140 }}>
           <thead>
             <tr>
               <th style={{ width: 40, textAlign: 'center' }}>
                 <div className="row-checkbox" />
               </th>
-              <th>FAC Code</th>
-              <th>Reff Number</th>
-              <th>Direct / Cedant</th>
-              <th>Tertanggung</th>
-              <th>Nama Kapal</th>
-              <th>Kode Kapal</th>
-              <th>Nilai Pertanggungan</th>
-              <th>Nilai Klaim</th>
-              <th>Tgl Klaim</th>
-              <th>Status</th>
+              {columns.map((col) => (
+                <th key={col.key} style={{ whiteSpace: 'nowrap' }}>
+                  {col.label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -106,47 +209,16 @@ export default function DataTable({
                     <td style={{ textAlign: 'center' }}>
                       <div className="row-checkbox" />
                     </td>
-                    <td style={{ fontWeight: 600, color: '#0f172a' }}>{row.fac_code || '-'}</td>
-                    <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#475569' }}>
-                      {row.reff_number || '-'}
-                    </td>
-                    <td>{row.direct || '-'}</td>
-                    <td>{row.nama_tertanggung_loss || row.nama_tertanggung || '-'}</td>
-                    <td style={{ fontWeight: 600, color: '#1e3a8a' }}>{row.nama_kapal || '-'}</td>
-                    <td>
-                      <span style={{
-                        background: '#f1f5f9',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        fontFamily: 'monospace'
-                      }}>
-                        {row.code_kapal || '-'}
-                      </span>
-                    </td>
-                    <td>{formatAmount(row.sum_insured, row.currency)}</td>
-                    <td style={{ fontWeight: 600, color: '#b91c1c' }}>
-                      {formatAmount(row.loss_amount, row.currency)}
-                    </td>
-                    <td style={{ fontSize: '0.82rem', color: '#64748b' }}>{row.date_of_loss || '-'}</td>
-                    <td>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '3px 8px',
-                        borderRadius: '12px',
-                        fontSize: '0.72rem',
-                        fontWeight: 600,
-                        background: row.status === 'Settled' ? '#dcfce7' : row.status === 'In Review' ? '#fef3c7' : '#e0f2fe',
-                        color: row.status === 'Settled' ? '#166534' : row.status === 'In Review' ? '#92400e' : '#0369a1'
-                      }}>
-                        {row.status || 'Active'}
-                      </span>
-                    </td>
+                    {columns.map((col) => (
+                      <td key={col.key} style={{ whiteSpace: 'nowrap' }}>
+                        {renderCellValue(row, col)}
+                      </td>
+                    ))}
                   </tr>
                 ))}
                 {isAllMode && renderedCount < data.length && (
                   <tr ref={bottomSentinelRef}>
-                    <td colSpan={11} style={{ padding: '14px', textAlign: 'center', background: '#f8fafc' }}>
+                    <td colSpan={columns.length + 1} style={{ padding: '14px', textAlign: 'center', background: '#f8fafc' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: '0.82rem', color: '#2563eb' }}>
                         <span className="chunk-pulse-dot" />
                         <span>
@@ -166,7 +238,7 @@ export default function DataTable({
               </>
             ) : (
               <tr>
-                <td colSpan={11} style={{ padding: '48px 24px', textAlign: 'center' }}>
+                <td colSpan={columns.length + 1} style={{ padding: '48px 24px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
                     <div style={{
                       width: 48,
@@ -185,7 +257,7 @@ export default function DataTable({
                       Tidak Ada Data Pada Tabel Ini
                     </div>
                     <p style={{ fontSize: '0.82rem', color: '#64748b', maxWidth: 460 }}>
-                      Tabel <strong>{tableTitleMap[activeTab] || activeTab}</strong> saat ini belum memiliki baris data di PostgreSQL Supabase. Anda dapat mengisi data melalui fitur <strong>Upload Berkas</strong>.
+                      Tabel <strong>{tableTitleMap[activeTab] || activeTab}</strong> saat ini belum memiliki baris data di PostgreSQL Supabase.
                     </p>
                   </div>
                 </td>
@@ -201,7 +273,7 @@ export default function DataTable({
           {isAllMode ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span>
-                Menampilkan <strong>{Math.min(renderedCount, data.length)}</strong> dari <strong>{data.length}</strong> baris data
+                Menampilkan <strong>{Math.min(renderedCount, data.length)}</strong> dari <strong>{data.length}</strong> baris data real ({columns.length} kolom sesuai Excel)
               </span>
               {renderedCount < data.length ? (
                 <span className="progressive-render-badge">
@@ -217,7 +289,7 @@ export default function DataTable({
             </div>
           ) : (
             <span>
-              Menampilkan <strong>{startRecord} - {endRecord}</strong> dari <strong>{pagination.total}</strong> baris data real
+              Menampilkan <strong>{startRecord} - {endRecord}</strong> dari <strong>{pagination.total}</strong> baris data ({columns.length} kolom sesuai Excel)
             </span>
           )}
 

@@ -101,43 +101,19 @@ export const facLensService = {
   exportToCsv(data, filename = 'fac_lens_export.csv') {
     if (!data || !data.length) return;
 
-    const headers = [
-      'FAC Code',
-      'Ref Number',
-      'Direct (Company)',
-      'Broker',
-      'Nama Tertanggung',
-      'Afiliasi Tertanggung',
-      'Nama Tertanggung Loss',
-      'Nama Kapal',
-      'Vessel Code',
-      'Sum Insured',
-      'Loss Amount',
-      'Currency',
-      'Date of Loss',
-      'Loss Cause',
-      'Status'
-    ];
+    // Detect columns from first item or use standard Excel 24 columns
+    const keys = Object.keys(data[0]).filter((k) => k !== 'id');
+    const headerLabels = keys.map((k) => k.replace(/_/g, ' ').toUpperCase());
 
-    const rows = data.map((item) => [
-      `"${item.fac_code || ''}"`,
-      `"${item.reff_number || ''}"`,
-      `"${item.direct || ''}"`,
-      `"${item.broker || ''}"`,
-      `"${(item.nama_tertanggung || '').replace(/"/g, '""')}"`,
-      `"${(item.afiliasi_tertanggung || '').replace(/"/g, '""')}"`,
-      `"${(item.nama_tertanggung_loss || '').replace(/"/g, '""')}"`,
-      `"${(item.nama_kapal || '').replace(/"/g, '""')}"`,
-      `"${item.code_kapal || ''}"`,
-      item.sum_insured || 0,
-      item.loss_amount || 0,
-      `"${item.currency || 'IDR'}"`,
-      `"${item.date_of_loss || ''}"`,
-      `"${(item.loss_cause || '').replace(/"/g, '""')}"`,
-      `"${item.status || ''}"`
-    ]);
+    const rows = data.map((item) =>
+      keys.map((k) => {
+        const val = item[k];
+        if (val === null || val === undefined) return '""';
+        return `"${String(val).replace(/"/g, '""')}"`;
+      })
+    );
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headerLabels.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
