@@ -244,7 +244,7 @@ export default function App() {
   let headerSubtitle = '';
   if (isEmbedMode) {
     headerTitle = 'Dashboard';
-    headerSubtitle = 'SAS Viya Embed Mode (Full Screen)';
+    headerSubtitle = '';
   } else if (activeTab === 'mapping' || activeTab === 'upload-mapping') {
     headerTitle = 'Mapping';
     headerSubtitle = 'Konfigurasi Pemetaan Kolom COB Marine Hull (MR11 Raw)';
