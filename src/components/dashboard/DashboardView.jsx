@@ -61,7 +61,7 @@ export default function DashboardView({
         activeTab={selectedTableTab}
       />
 
-      {/* Filter Summary Chips Bar */}
+      {/* Filter Summary Chips Bar — only visible when filters are active */}
       <TabNavigation
         filters={filters}
         onClearFilters={onClearFilters}

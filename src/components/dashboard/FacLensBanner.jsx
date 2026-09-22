@@ -51,9 +51,7 @@ const DEFAULT_COLUMNS = {
 export default function FacLensBanner({
   filters = {},
   onFilterChange,
-  activeTab = 'loss_pla',
-  selectedFile = null,
-  onClearSelectedFile
+  activeTab = 'loss_pla'
 }) {
   const availableColumns = TABLE_COLUMN_DEFINITIONS[activeTab] || TABLE_COLUMN_DEFINITIONS.loss_pla;
 
@@ -65,7 +63,7 @@ export default function FacLensBanner({
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Update visible columns when tab changes if current active columns are not part of the tab
+  // Update visible columns when tab changes
   useEffect(() => {
     const validKeys = new Set(availableColumns.map((c) => c.key));
     setVisibleColumns((prev) => {
@@ -91,7 +89,6 @@ export default function FacLensBanner({
   const toggleColumn = (key) => {
     setVisibleColumns((prev) => {
       if (prev.includes(key)) {
-        // If unchecking, clear its filter value too
         onFilterChange(key, '');
         return prev.filter((k) => k !== key);
       } else {
@@ -114,45 +111,46 @@ export default function FacLensBanner({
     setVisibleColumns((prev) => prev.filter((k) => k !== key));
   };
 
+  const activeTabLabel =
+    activeTab === 'acceptance'
+      ? 'Akseptasi'
+      : activeTab === 'loss_sla'
+      ? 'Loss SLA'
+      : 'Loss PLA';
+
   return (
     <div className="fac-lens-banner">
-      {/* Banner Header */}
+      {/* Banner Header Row */}
       <div className="banner-header-row">
         <div className="banner-title-group">
           <h2 className="banner-title">FAC LENS</h2>
           <p className="banner-subtitle">
-            Facultative Data Intelligence & Customizable Column Filter
+            Facultative Data Intelligence &amp; Analytics Dashboard
           </p>
         </div>
 
-        {/* Action button: Customize Filters */}
+        {/* Compact Customize Button — icon only, opens popup */}
         <div className="banner-actions" ref={dropdownRef}>
           <button
             type="button"
-            className={`btn-customize-filters ${isCustomizeOpen ? 'active' : ''}`}
+            className={`btn-customize-compact ${isCustomizeOpen ? 'active' : ''}`}
             onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}
-            title="Kustomisasi kolom filter sesuai tabel yang aktif"
+            title="Kustomisasi kolom filter"
           >
-            <SlidersHorizontal size={14} />
-            <span>Kustomisasi Kolom Filter</span>
+            <SlidersHorizontal size={15} />
+            <span className="btn-customize-compact-label">Setting Filter</span>
             <span className="badge-count">{visibleColumns.length}</span>
           </button>
 
-          {/* Customize Popover Dropdown */}
+          {/* Customize Popover */}
           {isCustomizeOpen && (
             <div className="customize-columns-popover">
               <div className="popover-header">
-                <span className="popover-title">Pilih Kolom Filter Tabel</span>
-                <span className="popover-tab-badge">
-                  {activeTab === 'acceptance'
-                    ? 'Akseptasi'
-                    : activeTab === 'loss_sla'
-                    ? 'Loss SLA'
-                    : 'Loss PLA'}
-                </span>
+                <span className="popover-title">Pilih Kolom Filter</span>
+                <span className="popover-tab-badge">{activeTabLabel}</span>
               </div>
               <p className="popover-hint">
-                Centang kolom yang ingin Anda tampilkan sebagai kolom pencarian filter:
+                Centang kolom yang ingin ditampilkan sebagai input filter:
               </p>
 
               <div className="popover-column-list">
@@ -175,18 +173,10 @@ export default function FacLensBanner({
               </div>
 
               <div className="popover-footer">
-                <button
-                  type="button"
-                  className="popover-btn-link"
-                  onClick={handleSelectAll}
-                >
+                <button type="button" className="popover-btn-link" onClick={handleSelectAll}>
                   Pilih Semua
                 </button>
-                <button
-                  type="button"
-                  className="popover-btn-link"
-                  onClick={handleResetDefault}
-                >
+                <button type="button" className="popover-btn-link" onClick={handleResetDefault}>
                   <RotateCcw size={12} style={{ marginRight: 4 }} />
                   Reset Default
                 </button>
@@ -239,7 +229,7 @@ export default function FacLensBanner({
           );
         })}
 
-        {/* Quick Add Column Button at the end */}
+        {/* Quick Add Column Button */}
         <button
           type="button"
           className="btn-quick-add-column"

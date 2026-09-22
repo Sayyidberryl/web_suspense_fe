@@ -31,39 +31,32 @@ export default function TabNavigation({
 
   const hasAnyFilter = activeFilters.length > 0;
 
+  if (!hasAnyFilter) return null;
+
   return (
     <div className="tab-navigation-container" style={{ marginTop: 0 }}>
-      {/* Filter Status Line */}
       <div className="filters-summary-bar">
         <div className="filters-label">
           <span>Filters Aktif:</span>
-          {!hasAnyFilter ? (
-            <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.8rem' }}>
-              Semua data pada tabel ini ditampilkan (tanpa filter kolom)
-            </span>
-          ) : (
-            <div className="filter-chip-list">
-              {activeFilters.map(([key, val]) => (
-                <span key={key} className="filter-chip">
-                  <span>{filterLabels[key] || key}: <strong>{val}</strong></span>
-                  <span
-                    className="filter-chip-remove"
-                    onClick={() => onRemoveFilter(key)}
-                    title="Hapus filter ini"
-                  >
-                    <X size={11} />
-                  </span>
+          <div className="filter-chip-list">
+            {activeFilters.map(([key, val]) => (
+              <span key={key} className="filter-chip">
+                <span>{filterLabels[key] || key}: <strong>{val}</strong></span>
+                <span
+                  className="filter-chip-remove"
+                  onClick={() => onRemoveFilter(key)}
+                  title="Hapus filter ini"
+                >
+                  <X size={11} />
                 </span>
-              ))}
-            </div>
-          )}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {hasAnyFilter && (
-          <button className="clear-filters-btn" onClick={onClearFilters}>
-            Reset Semua Filter
-          </button>
-        )}
+        <button className="clear-filters-btn" onClick={onClearFilters}>
+          Reset Semua Filter
+        </button>
       </div>
     </div>
   );

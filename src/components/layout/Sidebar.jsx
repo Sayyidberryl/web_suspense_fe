@@ -1,6 +1,6 @@
 import React from 'react';
 import { LayoutDashboard, Upload, History } from 'lucide-react';
-import indoreLogo from '../../assets/indore_logo.png';
+import indoreLogo from '../../assets/indore_logo.webp';
 
 export default function Sidebar({ activeTab, onTabChange }) {
   return (
