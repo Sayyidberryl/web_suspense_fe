@@ -1,11 +1,9 @@
 import React from 'react';
-import { Search, RefreshCw, Download, Database } from 'lucide-react';
+import { RefreshCw, Download, Database } from 'lucide-react';
 
 export default function TopControlBar({
   selectedTableTab = 'loss_pla',
   onSelectTableTab,
-  globalSearch = '',
-  onGlobalSearchChange,
   onRefresh,
   onExport
 }) {
@@ -41,17 +39,6 @@ export default function TopControlBar({
           </div>
         </div>
 
-        {/* Quick Search Group */}
-        <div className="search-input-group">
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder="Cari FAC code, kapal, atau cedant..."
-            value={globalSearch}
-            onChange={(e) => onGlobalSearchChange(e.target.value)}
-          />
-        </div>
-
         {/* Refresh Icon Button */}
         <button className="icon-btn" onClick={onRefresh} title="Muat Ulang Data Real">
           <RefreshCw size={16} />
@@ -67,3 +54,4 @@ export default function TopControlBar({
     </div>
   );
 }
+

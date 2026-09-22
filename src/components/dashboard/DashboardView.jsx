@@ -44,12 +44,10 @@ export default function DashboardView({
         </div>
       </div>
 
-      {/* Search & Top Controls with "Pilih Data" Dropdown */}
+      {/* Top Controls with "Pilih Data" Dropdown */}
       <TopControlBar
         selectedTableTab={selectedTableTab}
         onSelectTableTab={onSelectTableTab}
-        globalSearch={filters.globalSearch || ''}
-        onGlobalSearchChange={(val) => onFilterChange('globalSearch', val)}
         onRefresh={onRefresh}
         onExport={onExport}
       />

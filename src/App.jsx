@@ -18,8 +18,31 @@ import './styles/mapping.css';
 import './styles/ai-processing.css';
 import './styles/history.css';
 
+// Route detection helper for standalone URLs: /dashboard, /mapping, /upload, /history
+const parseCurrentLocation = () => {
+  if (typeof window === 'undefined') return { route: 'app', tab: 'dashboard' };
+  const pathname = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+  
+  if (pathname === '/dashboard') {
+    return { route: 'embed-dashboard', tab: 'dashboard' };
+  }
+  if (pathname === '/mapping') {
+    return { route: 'mapping', tab: 'mapping' };
+  }
+  if (pathname === '/upload') {
+    return { route: 'app', tab: 'upload' };
+  }
+  if (pathname === '/history') {
+    return { route: 'app', tab: 'history' };
+  }
+  return { route: 'app', tab: 'dashboard' };
+};
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'upload' | 'upload-mapping' | 'history'
+  const initialRoute = parseCurrentLocation();
+  // 'app' (default with sidebar) | 'embed-dashboard' (SAS Viya embed: full screen, no sidebar) | 'mapping'
+  const [currentRoute, setCurrentRoute] = useState(initialRoute.route);
+  const [activeTab, setActiveTab] = useState(initialRoute.tab); // 'dashboard' | 'mapping' | 'upload' | 'upload-mapping' | 'history'
   
   // Tab switcher for the 3 PostgreSQL tables:
   // 'loss_pla'   -> FACUL_ETL_MH_LOSS_PLA
@@ -32,7 +55,8 @@ export default function App() {
     page: 1,
     limit: 12,
     total: 0,
-    totalPages: 1
+    totalPages: 1,
+    isAll: false
   });
 
   // Filters for Dashboard FAC LENS (supports all table columns dynamically)
@@ -48,8 +72,7 @@ export default function App() {
     status: '',
     lossCause: '',
     currency: '',
-    dateOfLoss: '',
-    globalSearch: ''
+    dateOfLoss: ''
   });
 
   const [tableData, setTableData] = useState([]);
@@ -70,6 +93,33 @@ export default function App() {
 
   // Selected file for history detail modal from Dashboard RecentOutput
   const [selectedHistoryDetail, setSelectedHistoryDetail] = useState(null);
+
+  // Listen for browser navigation (back/forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      const loc = parseCurrentLocation();
+      setCurrentRoute(loc.route);
+      setActiveTab(loc.tab);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleTabChange = (tab, path) => {
+    setSelectedHistoryDetail(null);
+    setActiveTab(tab);
+
+    const targetPath = path || (tab === 'dashboard' ? '/' : `/${tab}`);
+    window.history.pushState(null, '', targetPath);
+
+    if (targetPath === '/dashboard') {
+      setCurrentRoute('embed-dashboard');
+    } else if (targetPath === '/mapping' || tab === 'mapping') {
+      setCurrentRoute('mapping');
+    } else {
+      setCurrentRoute('app');
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -120,8 +170,7 @@ export default function App() {
       status: '',
       lossCause: '',
       currency: '',
-      dateOfLoss: '',
-      globalSearch: ''
+      dateOfLoss: ''
     });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
@@ -141,7 +190,11 @@ export default function App() {
   };
 
   const handleLimitChange = (newLimit) => {
-    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+    if (newLimit === 'all') {
+      setPagination((prev) => ({ ...prev, limit: 2000, isAll: true, page: 1 }));
+    } else {
+      setPagination((prev) => ({ ...prev, limit: Number(newLimit), isAll: false, page: 1 }));
+    }
   };
 
   const handleExportData = () => {
@@ -151,7 +204,7 @@ export default function App() {
   // Upload -> Mapping Navigation
   const handleProceedToMapping = (fileData) => {
     setCurrentUploadFile(fileData);
-    setActiveTab('upload-mapping');
+    handleTabChange('upload-mapping', '/mapping');
   };
 
   // Mapping -> Start AI Parsing
@@ -175,40 +228,44 @@ export default function App() {
   // AI Complete -> Go to History
   const handleAiComplete = () => {
     setIsAiModalOpen(false);
-    setActiveTab('history');
+    handleTabChange('history', '/history');
   };
 
   // From Recent Output on Dashboard to History Detail
   const handleSelectRecentDetail = (file) => {
     setSelectedHistoryDetail(file);
-    setActiveTab('history');
+    handleTabChange('history', '/history');
   };
+
+  const isEmbedMode = currentRoute === 'embed-dashboard';
 
   // Header Titles
   let headerTitle = 'Dashboard';
   let headerSubtitle = '';
-  if (activeTab === 'upload') {
+  if (isEmbedMode) {
+    headerTitle = 'Dashboard';
+    headerSubtitle = 'SAS Viya Embed Mode (Full Screen)';
+  } else if (activeTab === 'mapping' || activeTab === 'upload-mapping') {
+    headerTitle = 'Mapping';
+    headerSubtitle = 'Konfigurasi Pemetaan Kolom Bordero';
+  } else if (activeTab === 'upload') {
     headerTitle = 'Upload';
-  } else if (activeTab === 'upload-mapping') {
-    headerTitle = 'Upload';
-    headerSubtitle = 'Mapping';
   } else if (activeTab === 'history') {
     headerTitle = 'History';
     headerSubtitle = 'Log Eksekusi & Riwayat Berkas Reasuransi';
   }
 
   return (
-    <div className="app-layout">
-      {/* Sidebar navigation */}
-      <Sidebar
-        activeTab={activeTab.startsWith('upload') ? 'upload' : activeTab}
-        onTabChange={(tab) => {
-          setSelectedHistoryDetail(null);
-          setActiveTab(tab);
-        }}
-      />
+    <div className={`app-layout ${isEmbedMode ? 'embed-dashboard' : ''}`}>
+      {/* Sidebar navigation: Hidden completely in SAS Viya embed mode */}
+      {!isEmbedMode && (
+        <Sidebar
+          activeTab={activeTab === 'upload-mapping' ? 'mapping' : activeTab}
+          onTabChange={handleTabChange}
+        />
+      )}
 
-      <div className="main-content-wrapper">
+      <div className={`main-content-wrapper ${isEmbedMode ? 'embed-mode' : ''}`}>
         <Header title={headerTitle} subtitle={headerSubtitle} />
 
         {/* Global background processing banner indicator if running in background */}
@@ -253,8 +310,8 @@ export default function App() {
           </div>
         )}
 
-        <main className="page-container">
-          {/* 1. Dashboard View (Real Data from 3 PostgreSQL Tables) */}
+        <main className={`page-container ${isEmbedMode ? 'embed-mode' : ''}`}>
+          {/* 1. Dashboard View (Standard or SAS Viya Embed Mode) */}
           {activeTab === 'dashboard' && (
             <DashboardView
               tableData={tableData}
@@ -270,30 +327,30 @@ export default function App() {
               onLimitChange={handleLimitChange}
               onRefresh={loadData}
               onExport={handleExportData}
-              onNavigateToUpload={() => setActiveTab('upload')}
-              onNavigateToHistory={() => setActiveTab('history')}
+              onNavigateToUpload={() => handleTabChange('upload', '/upload')}
+              onNavigateToHistory={() => handleTabChange('history', '/history')}
               onSelectDetail={handleSelectRecentDetail}
             />
           )}
 
-          {/* 2. Upload Step 1 */}
+          {/* 2. Mapping View (Halaman /mapping) */}
+          {(activeTab === 'mapping' || activeTab === 'upload-mapping') && (
+            <ColumnMappingView
+              fileInfo={currentUploadFile}
+              onBack={() => handleTabChange('dashboard', '/')}
+              onCancel={() => handleTabChange('dashboard', '/')}
+              onStartParsing={handleStartParsing}
+            />
+          )}
+
+          {/* 3. Upload Step 1 (Halaman /upload) */}
           {activeTab === 'upload' && (
             <UploadStepOne
               onProceedToMapping={handleProceedToMapping}
             />
           )}
 
-          {/* 3. Upload Step 2: Mapping View */}
-          {activeTab === 'upload-mapping' && (
-            <ColumnMappingView
-              fileInfo={currentUploadFile}
-              onBack={() => setActiveTab('upload')}
-              onCancel={() => setActiveTab('upload')}
-              onStartParsing={handleStartParsing}
-            />
-          )}
-
-          {/* 4. History View (Real database logs) */}
+          {/* 4. History View (Halaman /history) */}
           {activeTab === 'history' && (
             <HistoryView
               initialFileDetail={selectedHistoryDetail}

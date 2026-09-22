@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Upload, History } from 'lucide-react';
+import { LayoutDashboard, GitMerge, Upload, History } from 'lucide-react';
 import indoreLogo from '../../assets/indore_logo.webp';
 
 export default function Sidebar({ activeTab, onTabChange }) {
@@ -22,15 +22,23 @@ export default function Sidebar({ activeTab, onTabChange }) {
       <div className="sidebar-nav">
         <button
           className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => onTabChange('dashboard')}
+          onClick={() => onTabChange('dashboard', '/')}
         >
           <LayoutDashboard className="nav-icon" />
           <span>Dashboard</span>
         </button>
 
         <button
+          className={`nav-item ${activeTab === 'mapping' || activeTab === 'upload-mapping' ? 'active' : ''}`}
+          onClick={() => onTabChange('mapping', '/mapping')}
+        >
+          <GitMerge className="nav-icon" />
+          <span>Mapping</span>
+        </button>
+
+        <button
           className={`nav-item ${activeTab === 'upload' ? 'active' : ''}`}
-          onClick={() => onTabChange('upload')}
+          onClick={() => onTabChange('upload', '/upload')}
         >
           <Upload className="nav-icon" />
           <span>Upload</span>
@@ -38,7 +46,7 @@ export default function Sidebar({ activeTab, onTabChange }) {
 
         <button
           className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => onTabChange('history')}
+          onClick={() => onTabChange('history', '/history')}
         >
           <History className="nav-icon" />
           <span>History</span>
