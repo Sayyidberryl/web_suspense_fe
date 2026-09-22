@@ -312,6 +312,25 @@
   position: relative;
 }
 
+/* Footer action area — below filter grid */
+.banner-footer-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #bfdbfe;
+}
+
+/* Popup opens upward from the footer button */
+.customize-columns-popover.popover-above {
+  bottom: calc(100% + 8px);
+  top: auto;
+  right: auto;
+  left: 0;
+}
+
 /* Compact customize button — icon + short label */
 .btn-customize-compact {
   display: flex;
