@@ -1,0 +1,54 @@
+/* Data Table Redesign */
+.table-card-container {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.fac-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.fac-table thead th {
+  background-color: #f8fafc;
+  color: #111827;
+  font-weight: 700;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.fac-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.fac-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.fac-table tbody td {
+  padding: 14px 16px;
+  color: #4b5563;
+  vertical-align: middle;
+}
+
+.fac-table tbody td:last-child {
+  text-align: right;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+/* Pagination */
+.table-pagination-bar {
+  display: none; /* Hide for now to match the clean look of the mockup, or we can keep it minimal */
+}
