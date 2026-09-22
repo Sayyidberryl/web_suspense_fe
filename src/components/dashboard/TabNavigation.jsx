@@ -1,10 +1,12 @@
 import React from 'react';
-import { MoreVertical, X } from 'lucide-react';
+import { MoreVertical, X, FileSpreadsheet } from 'lucide-react';
 
 export default function TabNavigation({
   activeTab,
   onTabChange,
-  filters,
+  filters = {},
+  selectedFile = null,
+  onClearSelectedFile,
   onClearFilters,
   onRemoveFilter
 }) {
@@ -14,17 +16,30 @@ export default function TabNavigation({
     { id: 'loss_sla', label: 'MH - Data Loss SLA' },
   ];
 
-  // Active filter keys
-  const activeFilters = Object.entries(filters).filter(([_, val]) => Boolean(val && val.trim()));
+  // Active filter keys (exclude selectedFile which is an object)
+  const activeFilters = Object.entries(filters).filter(([key, val]) => {
+    if (key === 'selectedFile') return false;
+    return Boolean(val && typeof val === 'string' && val.trim());
+  });
 
   const filterLabels = {
     facCode: 'FAC Code',
-    companyName: 'Company',
-    insuredLossName: 'Insured Loss',
-    vesselName: 'Vessel',
-    vesselCode: 'Vessel Code',
-    globalSearch: 'Search'
+    reffNumber: 'Reff No.',
+    companyName: 'Cedant / Direct',
+    direct: 'Direct',
+    broker: 'Broker',
+    insuredName: 'Tertanggung',
+    insuredLossName: 'Tertanggung Loss',
+    vesselName: 'Nama Kapal',
+    vesselCode: 'Kode Kapal',
+    lossCause: 'Penyebab Klaim',
+    dateOfLoss: 'Tgl Klaim',
+    currency: 'Mata Uang',
+    status: 'Status',
+    globalSearch: 'Cari'
   };
+
+  const hasAnyFilter = activeFilters.length > 0 || Boolean(selectedFile);
 
   return (
     <div className="tab-navigation-container">
@@ -48,11 +63,29 @@ export default function TabNavigation({
       {/* Filter Status Line */}
       <div className="filters-summary-bar">
         <div className="filters-label">
-          <span>Filters:</span>
-          {activeFilters.length === 0 ? (
-            <span>No selections</span>
+          <span>Filters Aktif:</span>
+          {!hasAnyFilter ? (
+            <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.8rem' }}>
+              Semua data ditampilkan (tanpa filter)
+            </span>
           ) : (
             <div className="filter-chip-list">
+              {/* Selected File Chip */}
+              {selectedFile && (
+                <span className="filter-chip file-chip">
+                  <FileSpreadsheet size={11} style={{ marginRight: 4, color: '#166534' }} />
+                  <span>Berkas: <strong>{selectedFile.file_name}</strong></span>
+                  <span
+                    className="filter-chip-remove"
+                    onClick={onClearSelectedFile}
+                    title="Hapus filter berkas ini"
+                  >
+                    <X size={11} />
+                  </span>
+                </span>
+              )}
+
+              {/* Column Filter Chips */}
               {activeFilters.map(([key, val]) => (
                 <span key={key} className="filter-chip">
                   <span>{filterLabels[key] || key}: <strong>{val}</strong></span>
@@ -69,7 +102,7 @@ export default function TabNavigation({
           )}
         </div>
 
-        {activeFilters.length > 0 && (
+        {hasAnyFilter && (
           <button className="clear-filters-btn" onClick={onClearFilters}>
             Reset Semua Filter
           </button>

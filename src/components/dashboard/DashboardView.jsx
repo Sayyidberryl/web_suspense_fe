@@ -18,6 +18,9 @@ export default function DashboardView({
   pagination,
   onPageChange,
   onLimitChange,
+  fileList = [],
+  selectedFile = null,
+  onFileSelect,
   onRefresh,
   onExport,
   onNavigateToUpload,
@@ -44,25 +47,33 @@ export default function DashboardView({
         </div>
       </div>
 
-      {/* Search & Top Controls */}
+      {/* Search & Top Controls with Dropdown File Selector */}
       <TopControlBar
-        globalSearch={filters.globalSearch}
+        globalSearch={filters.globalSearch || ''}
         onGlobalSearchChange={(val) => onFilterChange('globalSearch', val)}
+        fileList={fileList}
+        selectedFile={selectedFile}
+        onFileSelect={onFileSelect}
         onRefresh={onRefresh}
         onExport={onExport}
       />
 
-      {/* FAC LENS Filter Banner */}
+      {/* FAC LENS Filter Banner with Customizable Column Filters */}
       <FacLensBanner
         filters={filters}
         onFilterChange={onFilterChange}
+        activeTab={selectedTableTab}
+        selectedFile={selectedFile}
+        onClearSelectedFile={() => onFileSelect(null)}
       />
 
-      {/* 3 PostgreSQL Tables Switcher Navigation */}
+      {/* 3 PostgreSQL Tables Switcher Navigation with Filter Chips */}
       <TabNavigation
         activeTab={selectedTableTab}
         onTabChange={onSelectTableTab}
         filters={filters}
+        selectedFile={selectedFile}
+        onClearSelectedFile={() => onFileSelect(null)}
         onClearFilters={onClearFilters}
         onRemoveFilter={onRemoveFilter}
       />

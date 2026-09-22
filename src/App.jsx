@@ -7,6 +7,7 @@ import ColumnMappingView from './components/upload/ColumnMappingView';
 import AiProcessingModal from './components/upload/AiProcessingModal';
 import HistoryView from './components/history/HistoryView';
 import facLensService from './services/facLensService';
+import historyService from './services/historyService';
 
 import './styles/index.css';
 import './styles/sidebar.css';
@@ -34,19 +35,46 @@ export default function App() {
     totalPages: 1
   });
 
-  // Filters for Dashboard FAC LENS
+  // Dropdown File Selection State
+  const [fileList, setFileList] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  // Filters for Dashboard FAC LENS (supports all table columns dynamically)
   const [filters, setFilters] = useState({
     facCode: '',
+    reffNumber: '',
     companyName: '',
+    broker: '',
+    insuredName: '',
     insuredLossName: '',
     vesselName: '',
     vesselCode: '',
+    status: '',
+    lossCause: '',
+    currency: '',
+    dateOfLoss: '',
     globalSearch: ''
   });
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [, startTransition] = useTransition();
+
+  // Fetch available files from history on mount
+  const refreshFileList = useCallback(async () => {
+    try {
+      const res = await historyService.getHistory({ limit: 50 });
+      if (res && Array.isArray(res.data) && res.data.length > 0) {
+        setFileList(res.data);
+      }
+    } catch (err) {
+      console.warn('Could not fetch file list from history:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshFileList();
+  }, [refreshFileList]);
 
   // Upload & Mapping Flow State
   const [currentUploadFile, setCurrentUploadFile] = useState({
@@ -68,17 +96,33 @@ export default function App() {
     try {
       const response = await facLensService.getTableData({
         tab: selectedTableTab,
-        filters,
+        filters: {
+          ...filters,
+          selectedFile
+        },
         page: pagination.page,
         limit: pagination.limit
       });
 
       startTransition(() => {
-        setTableData(response.data || []);
+        let finalData = response.data || [];
+        // If a file is selected with a cedant, ensure data is scoped to that file
+        if (selectedFile && selectedFile.cedant) {
+          const cedantQuery = selectedFile.cedant.toLowerCase();
+          const filtered = finalData.filter((r) => {
+            const d = (r.direct || '').toLowerCase();
+            return d.includes(cedantQuery) || cedantQuery.includes(d);
+          });
+          if (filtered.length > 0) {
+            finalData = filtered;
+          }
+        }
+
+        setTableData(finalData);
         setPagination((prev) => ({
           ...prev,
-          total: response.total || 0,
-          totalPages: response.totalPages || 1
+          total: response.total || finalData.length,
+          totalPages: response.totalPages || Math.max(1, Math.ceil((response.total || finalData.length) / pagination.limit))
         }));
       });
     } catch (err) {
@@ -86,7 +130,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [selectedTableTab, filters, pagination.page, pagination.limit]);
+  }, [selectedTableTab, filters, selectedFile, pagination.page, pagination.limit]);
 
   useEffect(() => {
     if (activeTab === 'dashboard') {
@@ -99,15 +143,28 @@ export default function App() {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
+  const handleFileSelect = (file) => {
+    setSelectedFile(file);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
   const handleClearFilters = () => {
     setFilters({
       facCode: '',
+      reffNumber: '',
       companyName: '',
+      broker: '',
+      insuredName: '',
       insuredLossName: '',
       vesselName: '',
       vesselCode: '',
+      status: '',
+      lossCause: '',
+      currency: '',
+      dateOfLoss: '',
       globalSearch: ''
     });
+    setSelectedFile(null);
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
@@ -253,6 +310,9 @@ export default function App() {
               pagination={pagination}
               onPageChange={handlePageChange}
               onLimitChange={handleLimitChange}
+              fileList={fileList}
+              selectedFile={selectedFile}
+              onFileSelect={handleFileSelect}
               onRefresh={loadData}
               onExport={handleExportData}
               onNavigateToUpload={() => setActiveTab('upload')}

@@ -24,12 +24,24 @@ export const facLensService = {
         page,
         limit,
         fac_code: filters.facCode || '',
-        company_name: filters.companyName || '',
+        reff_number: filters.reffNumber || '',
+        company_name: filters.companyName || filters.direct || '',
+        broker: filters.broker || '',
+        insured_name: filters.insuredName || '',
         insured_loss_name: filters.insuredLossName || '',
         vessel_name: filters.vesselName || '',
         vessel_code: filters.vesselCode || '',
+        status: filters.status || '',
+        loss_cause: filters.lossCause || '',
+        currency: filters.currency || '',
+        date_of_loss: filters.dateOfLoss || '',
         search: filters.globalSearch || '',
       };
+
+      // If a specific file is selected from dropdown, prioritize filtering by its associated cedant/source
+      if (filters.selectedFile && filters.selectedFile.cedant && !params.company_name) {
+        params.company_name = filters.selectedFile.cedant;
+      }
 
       let endpoint = '/api/loss-pla';
       if (tab === 'acceptance') {
