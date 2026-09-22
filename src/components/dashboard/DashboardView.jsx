@@ -18,9 +18,6 @@ export default function DashboardView({
   pagination,
   onPageChange,
   onLimitChange,
-  fileList = [],
-  selectedFile = null,
-  onFileSelect,
   onRefresh,
   onExport,
   onNavigateToUpload,
@@ -47,13 +44,12 @@ export default function DashboardView({
         </div>
       </div>
 
-      {/* Search & Top Controls with Dropdown File Selector */}
+      {/* Search & Top Controls with "Pilih Data" Dropdown */}
       <TopControlBar
+        selectedTableTab={selectedTableTab}
+        onSelectTableTab={onSelectTableTab}
         globalSearch={filters.globalSearch || ''}
         onGlobalSearchChange={(val) => onFilterChange('globalSearch', val)}
-        fileList={fileList}
-        selectedFile={selectedFile}
-        onFileSelect={onFileSelect}
         onRefresh={onRefresh}
         onExport={onExport}
       />
@@ -63,17 +59,11 @@ export default function DashboardView({
         filters={filters}
         onFilterChange={onFilterChange}
         activeTab={selectedTableTab}
-        selectedFile={selectedFile}
-        onClearSelectedFile={() => onFileSelect(null)}
       />
 
-      {/* 3 PostgreSQL Tables Switcher Navigation with Filter Chips */}
+      {/* Filter Summary Chips Bar */}
       <TabNavigation
-        activeTab={selectedTableTab}
-        onTabChange={onSelectTableTab}
         filters={filters}
-        selectedFile={selectedFile}
-        onClearSelectedFile={() => onFileSelect(null)}
         onClearFilters={onClearFilters}
         onRemoveFilter={onRemoveFilter}
       />

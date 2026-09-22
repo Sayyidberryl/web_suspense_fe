@@ -1,44 +1,40 @@
 import React from 'react';
-import { Search, RefreshCw, Download, FileSpreadsheet } from 'lucide-react';
+import { Search, RefreshCw, Download, Database } from 'lucide-react';
 
 export default function TopControlBar({
+  selectedTableTab = 'loss_pla',
+  onSelectTableTab,
   globalSearch = '',
   onGlobalSearchChange,
-  fileList = [],
-  selectedFile = null,
-  onFileSelect,
   onRefresh,
   onExport
 }) {
+  const dataOptions = [
+    { id: 'acceptance', label: 'MH - Data Akseptasi' },
+    { id: 'loss_pla', label: 'MH - Data Loss PLA' },
+    { id: 'loss_sla', label: 'MH - Data Loss SLA' }
+  ];
+
   return (
     <div className="top-control-bar">
       <div className="control-left">
-        {/* Dropdown Pemilihan Berkas (File Selector) */}
+        {/* Dropdown Pemilihan Data ("Pilih Data") */}
         <div className="file-dropdown-container">
           <div className="file-dropdown-icon-wrapper">
-            <FileSpreadsheet size={16} className="file-dropdown-icon" />
+            <Database size={16} className="file-dropdown-icon" />
           </div>
           <div className="file-dropdown-select-wrapper">
-            <label className="file-dropdown-label">Pilih Berkas:</label>
+            <label className="file-dropdown-label">Pilih Data:</label>
             <select
-              id="dashboard-file-selector"
+              id="dashboard-data-selector"
               className="file-select-dropdown"
-              value={selectedFile ? selectedFile.id : 'all'}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === 'all') {
-                  onFileSelect(null);
-                } else {
-                  const found = fileList.find((f) => String(f.id) === String(val));
-                  onFileSelect(found || null);
-                }
-              }}
-              title="Pilih berkas hasil ETL untuk ditampilkan di dashboard"
+              value={selectedTableTab}
+              onChange={(e) => onSelectTableTab(e.target.value)}
+              title="Pilih data yang akan ditampilkan di dashboard"
             >
-              <option value="all">📂 Semua Berkas (Semua Data)</option>
-              {fileList.map((file) => (
-                <option key={file.id} value={file.id}>
-                  📄 {file.file_name} {file.cedant ? `• ${file.cedant}` : ''}
+              {dataOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
                 </option>
               ))}
             </select>

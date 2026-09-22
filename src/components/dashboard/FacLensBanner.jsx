@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SlidersHorizontal, Check, Plus, X, RotateCcw, FileSpreadsheet } from 'lucide-react';
+import { SlidersHorizontal, Check, Plus, X, RotateCcw } from 'lucide-react';
 
 // Definitions of all available filterable columns for each table tab
 export const TABLE_COLUMN_DEFINITIONS = {
@@ -195,26 +195,6 @@ export default function FacLensBanner({
           )}
         </div>
       </div>
-
-      {/* Selected File Context Badge (If any) */}
-      {selectedFile && (
-        <div className="selected-file-banner-badge">
-          <FileSpreadsheet size={15} className="file-badge-icon" />
-          <span>
-            Memfilter data berdasarkan berkas: <strong>{selectedFile.file_name}</strong>{' '}
-            {selectedFile.cedant && `(${selectedFile.cedant})`}
-          </span>
-          <button
-            type="button"
-            className="btn-remove-file-filter"
-            onClick={onClearSelectedFile}
-            title="Hapus filter berkas ini dan kembali ke semua data"
-          >
-            <X size={12} />
-            <span>Tampilkan Semua</span>
-          </button>
-        </div>
-      )}
 
       {/* Dynamic Customizable Filters Grid */}
       <div
