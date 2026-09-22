@@ -28,10 +28,9 @@ export default function DashboardView({
     <div>
       {/* Welcome Section */}
       <div className="welcome-section">
-        <h1 className="welcome-title">Portal Intelijen &amp; Analitik Facultative</h1>
-        <p className="welcome-desc">
-          Platform analitik terpadu untuk pengelolaan portofolio, akseptasi, dan klaim reasuransi Marine Hull IndonesiaRe.
-        </p>
+        <h1 className="welcome-title" style={{ marginBottom: 16 }}>
+          FAC LENS | Facultative Intelligence Platform
+        </h1>
         <div className="welcome-actions">
           <button className="btn-welcome-upload" onClick={onNavigateToUpload}>
             <Plus size={16} />
