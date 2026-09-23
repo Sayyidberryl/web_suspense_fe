@@ -1,4 +1,4 @@
-/* History View Styles (Mockup 2) */
+/* History View Styles */
 .history-container {
   display: flex;
   flex-direction: column;
@@ -152,7 +152,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Card View Grid (Mockup 2) */
+/* Card View Grid */
 .history-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

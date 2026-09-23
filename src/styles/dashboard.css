@@ -36,7 +36,7 @@
   background: #ffffff;
 }
 
-/* Welcome Section (Mockup 5) */
+/* Executive Header Section */
 .welcome-section {
   margin-bottom: 24px;
 }
@@ -132,7 +132,7 @@
   padding: 6px 12px;
   transition: all var(--transition-fast);
   min-width: 280px;
-  max-width: 380px;
+  max-width: 500px;
   flex: 1;
 }
 

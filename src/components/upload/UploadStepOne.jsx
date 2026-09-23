@@ -1,6 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, FileSpreadsheet, ArrowRight, X, ShieldCheck } from 'lucide-react';
+import { UploadCloud, FileSpreadsheet, ArrowRight, X, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
+import mappingService from '../../services/mappingService';
 import '../../styles/upload.css';
+
+const UNPARSED_10_COLUMNS = [
+  'fac_code', 'fac_risk', 'fac_desc', 'fac_old_ref', 'fac_cedant',
+  'fac_broker', 'fac_insured', 'currency', 'fac_totsi', 'fac_our_amt'
+];
 
 export default function UploadStepOne({ onProceedToMapping }) {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -8,15 +14,23 @@ export default function UploadStepOne({ onProceedToMapping }) {
   const [mappingTemplate, setMappingTemplate] = useState('Template Akseptasi (Marine Hull)');
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [detectedColumns, setDetectedColumns] = useState([]);
   const fileInputRef = useRef(null);
 
-  const handleFileSelect = (file) => {
+  const handleFileSelect = async (file) => {
     if (!file) return;
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    
+    // Parse headers in browser via SheetJS
+    const cols = await mappingService.parseFileHeaders(file);
+    const finalCols = cols && cols.length > 0 ? cols : UNPARSED_10_COLUMNS;
+    setDetectedColumns(finalCols);
+
     setSelectedFile({
       name: file.name,
-      size: `${sizeMb > 0 ? sizeMb : '41.4'} MB`,
-      fileObject: file
+      size: `${sizeMb > 0 ? sizeMb : '14.2'} KB`,
+      fileObject: file,
+      columnsCount: finalCols.length
     });
   };
 
@@ -45,17 +59,33 @@ export default function UploadStepOne({ onProceedToMapping }) {
       fileSize: selectedFile.size,
       cob,
       mappingTemplate,
-      fileObject: selectedFile.fileObject
+      fileObject: selectedFile.fileObject,
+      detectedColumns: detectedColumns.length > 0 ? detectedColumns : UNPARSED_10_COLUMNS
     });
   };
 
-  // Preset demo file helper using mr11_raw_data_export.xlsx
-  const setDemoFile = () => {
+  // Preset 1: Curated Raw Marine Hull Batch for AI Entity Normalization
+  const loadUnparsedBatchFile = () => {
     setSelectedFile({
-      name: 'mr11_raw_data_export.xlsx',
-      size: '41.4 MB',
-      fileObject: null
+      name: 'Bordero_MarineHull_Batch_Unparsed.xlsx',
+      size: '14.2 KB',
+      fileObject: null,
+      columnsCount: UNPARSED_10_COLUMNS.length,
+      isAiDemo: true
     });
+    setDetectedColumns(UNPARSED_10_COLUMNS);
+    setIsConfirmed(true);
+  };
+
+  // Preset 2: Comprehensive Facultative Export File (179 Columns)
+  const loadMasterExportFile = () => {
+    setSelectedFile({
+      name: 'MR11_Facultative_Export.xlsx',
+      size: '41.4 MB',
+      fileObject: null,
+      columnsCount: 179
+    });
+    setDetectedColumns([]);
     setIsConfirmed(true);
   };
 
@@ -63,8 +93,8 @@ export default function UploadStepOne({ onProceedToMapping }) {
     <div className="upload-container">
       {/* Dark Top Banner */}
       <div className="upload-banner-dark">
-        <h2>Extract, Transform & Load</h2>
-        <p>Unggah berkas mentah untuk divalidasi, distandarisasi, dan dimuat ke sistem analitik Indore.</p>
+        <h2>Extract, Transform & Load (ETL) dengan AI Parsing</h2>
+        <p>Unggah berkas mentah untuk divalidasi, diekstrak entitasnya menggunakan Gemini 3.8 Flash, dan dimuat ke sistem analitik Indore.</p>
       </div>
 
       <div className="upload-grid">
@@ -90,34 +120,57 @@ export default function UploadStepOne({ onProceedToMapping }) {
           <div className="dropzone-icon-circle">
             <UploadCloud size={36} />
           </div>
-          <h3 className="dropzone-title">UPLOAD BERKAS</h3>
+          <h3 className="dropzone-title">UPLOAD BERKAS MENTAH</h3>
           <p className="dropzone-hint">
-            Tarik & letakkan berkas di sini atau <span className="dropzone-hint-link">klik untuk memilih file</span>
+            Tarik & letakkan berkas di sini atau <span className="dropzone-hint-link">klik untuk memilih file Excel/CSV</span>
           </p>
+
           {!selectedFile && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setDemoFile();
-              }}
-              style={{
-                marginTop: 18,
-                background: '#f1f5f9',
-                border: '1px solid #cbd5e1',
-                padding: '7px 16px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                color: '#334155',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <span>📄 Gunakan berkas contoh (mr11_raw_data_export.xlsx)</span>
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18, width: '100%', maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={loadUnparsedBatchFile}
+                style={{
+                  background: 'linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%)',
+                  border: '1px solid #818cf8',
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  fontSize: '0.82rem',
+                  color: '#4338ca',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 2px 4px rgba(99, 102, 241, 0.15)'
+                }}
+              >
+                <Sparkles size={16} />
+                <span>📥 Muat Batch Bordero Mentah (Bordero_MarineHull_Batch_Unparsed.xlsx)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={loadMasterExportFile}
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  color: '#475569',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>📊 Master Ekspor Fakultatif (MR11_Facultative_Export.xlsx - 179 Kolom)</span>
+              </button>
+            </div>
           )}
         </div>
 
@@ -139,28 +192,22 @@ export default function UploadStepOne({ onProceedToMapping }) {
                 <FileSpreadsheet size={22} />
               </div>
               <div className="file-preview-details">
-                {selectedFile ? (
-                  <>
-                    <div className="file-preview-name" title={selectedFile.name}>
-                      {selectedFile.name}
-                    </div>
-                    <div className="file-preview-subtext">
-                      {selectedFile.size} • 179 Kolom Terdeteksi (MR11 Raw)
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="file-preview-name">Belum ada file dipilih...</div>
-                    <div className="file-preview-subtext">Silakan unggah dari area sebelah kiri</div>
-                  </>
-                )}
+                <h4>{selectedFile ? selectedFile.name : 'Belum ada file dipilih'}</h4>
+                <p>
+                  {selectedFile
+                    ? `${selectedFile.size} • ${selectedFile.columnsCount || detectedColumns.length || 10} Kolom Terdeteksi`
+                    : 'Format yang didukung: .xlsx, .xls, .csv'}
+                </p>
               </div>
               {selectedFile && (
                 <button
-                  type="button"
-                  onClick={() => setSelectedFile(null)}
-                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-                  title="Batalkan file"
+                  className="btn-clear-selection"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setIsConfirmed(false);
+                    setDetectedColumns([]);
+                  }}
+                  title="Batalkan pilihan"
                 >
                   <X size={16} />
                 </button>
@@ -168,75 +215,71 @@ export default function UploadStepOne({ onProceedToMapping }) {
             </div>
           </div>
 
-          {/* Card 2: SETTING */}
+          {/* Card 2: COB & TEMPLATE SELECTION */}
           <div className="info-card">
             <div className="info-card-header">
-              <span className="info-card-title">Setting</span>
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '0.72rem',
-                color: '#059669',
-                fontWeight: 600
-              }}>
-                <ShieldCheck size={12} /> Marine Hull Aktif
-              </span>
+              <span className="info-card-title">Pengaturan Pemetaan</span>
             </div>
 
             <div className="form-field-group">
-              <label className="form-label">Class of Business (COB)</label>
+              <label>Class of Business (COB)</label>
               <select
-                className="form-select"
                 value={cob}
                 onChange={(e) => setCob(e.target.value)}
+                className="select-custom-field"
               >
-                <option value="Marine Hull">Marine Hull (Tersedia)</option>
-                <option value="Fire & Property" disabled>Fire & Property (Segera Hadir)</option>
-                <option value="Marine Cargo" disabled>Marine Cargo (Segera Hadir)</option>
-                <option value="Engineering" disabled>Engineering (Segera Hadir)</option>
-                <option value="Liability" disabled>Liability (Segera Hadir)</option>
-                <option value="Motor" disabled>Motor (Segera Hadir)</option>
+                <option value="Marine Hull">Marine Hull</option>
+                <option value="Fire & Property">Fire & Property</option>
+                <option value="Motor Vehicle">Motor Vehicle</option>
+                <option value="Casualty & Liability">Casualty & Liability</option>
               </select>
             </div>
 
             <div className="form-field-group">
-              <label className="form-label">Template Pemetaan</label>
+              <label>Template Pemetaan Awal</label>
               <select
-                className="form-select"
                 value={mappingTemplate}
                 onChange={(e) => setMappingTemplate(e.target.value)}
+                className="select-custom-field"
               >
                 <option value="Template Akseptasi (Marine Hull)">
-                  Template Akseptasi (Marine Hull) - 29 Kolom
+                  Template Standar Akseptasi (Marine Hull)
                 </option>
                 <option value="Template Loss PLA (Marine Hull)">
-                  Template Loss PLA (Marine Hull) - 24 Kolom
+                  Template Standar Loss PLA (Marine Hull)
                 </option>
                 <option value="Template Loss SLA (Marine Hull)">
-                  Template Loss SLA (Marine Hull) - 24 Kolom
+                  Template Standar Loss SLA (Marine Hull)
                 </option>
               </select>
             </div>
+          </div>
 
-            <label className="checkbox-confirm-row">
+          {/* Confirmation Checkbox */}
+          <div className="checkbox-confirmation-box">
+            <label className="checkbox-label">
               <input
                 type="checkbox"
                 checked={isConfirmed}
                 onChange={(e) => setIsConfirmed(e.target.checked)}
+                disabled={!selectedFile}
               />
-              <span>Saya sudah yakin dengan settingan ini</span>
+              <span className="checkbox-custom-ui" />
+              <span className="checkbox-text">
+                Saya mengonfirmasi bahwa berkas di atas siap dipetakan dan distandarisasi skemanya.
+              </span>
             </label>
-
-            <button
-              className="btn-primary-next"
-              disabled={!selectedFile || !isConfirmed}
-              onClick={handleContinue}
-            >
-              <span>Selanjutnya ke Pemetaan</span>
-              <ArrowRight size={16} />
-            </button>
           </div>
+
+          {/* Continue Button */}
+          <button
+            className={`btn-continue-upload ${selectedFile && isConfirmed ? 'active' : ''}`}
+            disabled={!selectedFile || !isConfirmed}
+            onClick={handleContinue}
+          >
+            <span>Lanjutkan ke Pemetaan Kolom & AI</span>
+            <ArrowRight size={18} />
+          </button>
         </div>
       </div>
     </div>

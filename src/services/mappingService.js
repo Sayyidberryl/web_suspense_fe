@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx';
 import apiClient from './apiClient';
 import mr11ColumnsRaw from './mr11_columns.json';
 
@@ -166,6 +167,104 @@ export const mappingService = {
       localTemplates = localTemplates.filter((t) => t.id !== id);
       return { success: true };
     }
+  },
+
+  /**
+   * Reads column headers directly from user-uploaded Excel or CSV file in browser using SheetJS
+   */
+  async parseFileHeaders(file) {
+    if (!file) return [];
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          if (json && json.length > 0) {
+            const headerRow = json[0];
+            const cleanCols = headerRow
+              .map((c) => (c ? String(c).trim() : ''))
+              .filter(Boolean);
+            resolve(cleanCols);
+            return;
+          }
+        } catch (err) {
+          console.error('Error parsing file headers with SheetJS:', err);
+        }
+        resolve([]);
+      };
+      reader.onerror = () => resolve([]);
+      reader.readAsArrayBuffer(file);
+    });
+  },
+
+  /**
+   * Generates a flexible mapping template directly from an array of detected column names
+   */
+  createTemplateFromColumns(columns, templateName = 'Template Impor Excel') {
+    const mappings = columns.map((col, index) => {
+      const fieldDb = col.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/^_+|_+$/g, '') || `col_${index + 1}`;
+      return {
+        no: index + 1,
+        standard_name: col.replace(/_/g, ' ').toUpperCase(),
+        excel_col: col,
+        field_db: fieldDb,
+        data_type: 'VARCHAR',
+        status: 'mapped',
+        is_optional: false
+      };
+    });
+    return {
+      id: Date.now(),
+      name: templateName,
+      cob: 'Custom COB',
+      target_schema: 'CUSTOM_STAGE_DB',
+      column_count: mappings.length,
+      description: `Template otomatis dibuat dari ${columns.length} kolom file Excel`,
+      mappings
+    };
+  },
+
+  /**
+   * Creates a blank template with 1 initial editable row
+   */
+  createBlankTemplate(templateName = 'Template Baru (Kosong)') {
+    const defaultRow = {
+      no: 1,
+      standard_name: 'Kolom Target 1',
+      excel_col: '-- Pilih Kolom Excel --',
+      field_db: 'kolom_target_1',
+      data_type: 'VARCHAR',
+      status: 'unmapped',
+      is_optional: false
+    };
+    return {
+      id: Date.now(),
+      name: templateName,
+      cob: 'Custom COB',
+      target_schema: 'CUSTOM_STAGE_DB',
+      column_count: 1,
+      description: 'Template kosong manual yang dikonfigurasi pengguna',
+      mappings: [defaultRow]
+    };
+  },
+
+  /**
+   * Creates an empty mapping row for manual addition
+   */
+  createEmptyMappingRow(no = 1) {
+    return {
+      no,
+      standard_name: `Kolom Target ${no}`,
+      excel_col: '-- Pilih Kolom Excel --',
+      field_db: `kolom_${no}`,
+      data_type: 'VARCHAR',
+      status: 'unmapped',
+      is_optional: false
+    };
   },
 
   getTemplateByName(templateName) {

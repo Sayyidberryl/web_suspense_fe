@@ -75,7 +75,7 @@ export default function AiProcessingModal({
   return (
     <div className="ai-modal-overlay">
       <div className="ai-card-modal">
-        {/* Top Badge (Mockup 1) */}
+        {/* Top Badge */}
         <div className="ai-top-badge">
           <Lightbulb size={14} />
           <span>Pemrosesan AI & Validasi Berjalan</span>

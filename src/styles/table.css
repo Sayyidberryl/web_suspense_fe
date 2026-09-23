@@ -50,5 +50,5 @@
 
 /* Pagination */
 .table-pagination-bar {
-  display: none; /* Hide for now to match the clean look of the mockup, or we can keep it minimal */
+  display: none; /* Minimalistic table styling */
 }

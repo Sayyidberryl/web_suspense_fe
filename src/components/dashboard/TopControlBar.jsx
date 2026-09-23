@@ -1,38 +1,63 @@
-import React from 'react';
-import { RefreshCw, Download, Database } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { RefreshCw, Download, Database, Sparkles } from 'lucide-react';
+import facLensService from '../../services/facLensService';
 
 export default function TopControlBar({
   selectedTableTab = 'loss_pla',
   onSelectTableTab,
   onRefresh,
-  onExport
+  onExport,
+  tables: propTables = null
 }) {
-  const dataOptions = [
-    { id: 'acceptance', label: 'MH - Data Akseptasi' },
-    { id: 'loss_pla', label: 'MH - Data Loss PLA' },
-    { id: 'loss_sla', label: 'MH - Data Loss SLA' }
-  ];
+  const [tables, setTables] = useState([
+    { id: 'loss_pla', label: 'Marine Hull - Loss Advice (PLA / Outstanding)' },
+    { id: 'acceptance', label: 'Marine Hull - Akseptasi & Underwriting' },
+    { id: 'loss_sla', label: 'Marine Hull - Settled Claims (SLA)' },
+    { id: 'ai_parsed', label: 'Marine Hull - Hasil Normalisasi AI (Entitas Granular)', isAiParsed: true }
+  ]);
+
+  useEffect(() => {
+    if (propTables && propTables.length > 0) {
+      setTables(propTables);
+      return;
+    }
+
+    async function fetchTables() {
+      const list = await facLensService.getTables();
+      if (list && list.length > 0) {
+        setTables(list);
+      }
+    }
+    fetchTables();
+  }, [propTables]);
+
+  const currentTable = tables.find((t) => t.id === selectedTableTab || t.tableName === selectedTableTab);
 
   return (
     <div className="top-control-bar">
       <div className="control-left">
         {/* Dropdown Pemilihan Data ("Pilih Data") */}
         <div className="file-dropdown-container">
-          <div className="file-dropdown-icon-wrapper">
-            <Database size={16} className="file-dropdown-icon" />
+          <div className="file-dropdown-icon-wrapper" style={{ background: currentTable?.isAiParsed ? '#4f46e5' : undefined }}>
+            {currentTable?.isAiParsed ? (
+              <Sparkles size={16} className="file-dropdown-icon" style={{ color: '#ffffff' }} />
+            ) : (
+              <Database size={16} className="file-dropdown-icon" />
+            )}
           </div>
           <div className="file-dropdown-select-wrapper">
-            <label className="file-dropdown-label">Pilih Data:</label>
+            <label className="file-dropdown-label">Pilih Tabel DWH:</label>
             <select
               id="dashboard-data-selector"
               className="file-select-dropdown"
               value={selectedTableTab}
               onChange={(e) => onSelectTableTab(e.target.value)}
-              title="Pilih data yang akan ditampilkan di dashboard"
+              title="Pilih tabel data warehouse yang akan ditampilkan di dashboard"
+              style={{ fontWeight: 600 }}
             >
-              {dataOptions.map((opt) => (
+              {tables.map((opt) => (
                 <option key={opt.id} value={opt.id}>
-                  {opt.label}
+                  {opt.isAiParsed ? '⚡ ' : ''}{opt.label} {opt.count !== undefined ? `(${opt.count} baris)` : ''}
                 </option>
               ))}
             </select>
@@ -43,7 +68,26 @@ export default function TopControlBar({
         <button className="icon-btn" onClick={onRefresh} title="Perbarui Data">
           <RefreshCw size={16} />
         </button>
+
+        {currentTable?.isAiParsed && (
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'rgba(79, 70, 229, 0.1)',
+            color: '#4338ca',
+            border: '1px solid rgba(79, 70, 229, 0.3)',
+            padding: '4px 10px',
+            borderRadius: '6px',
+            fontSize: '0.75rem',
+            fontWeight: 700
+          }}>
+            <Sparkles size={13} />
+            <span>Normalisasi Entitas Granular (Gemini 3.8 Flash Engine)</span>
+          </span>
+        )}
       </div>
+
 
       <div className="control-right">
         <button className="download-btn" onClick={onExport} title="Unduh Data ke CSV">
@@ -54,4 +98,3 @@ export default function TopControlBar({
     </div>
   );
 }
-

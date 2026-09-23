@@ -74,7 +74,7 @@ export default function HistoryView({ initialFileDetail = null }) {
 
   return (
     <div className="history-container">
-      {/* Top Filter & Control Bar (Mockup 2) */}
+      {/* Top Filter & Control Bar */}
       <div className="history-filter-bar">
         <div className="history-filter-left">
           {/* Search Input */}
@@ -176,7 +176,7 @@ export default function HistoryView({ initialFileDetail = null }) {
           Tidak ada berkas yang cocok dengan kriteria filter.
         </div>
       ) : viewMode === 'card' ? (
-        /* CARD VIEW (Mockup 2) */
+        /* GRID CARD VIEW */
         <div className="history-cards-grid">
           {historyList.map((item) => {
             const statusClass = getStatusClass(item.status);
@@ -279,7 +279,7 @@ export default function HistoryView({ initialFileDetail = null }) {
         </div>
       )}
 
-      {/* Pagination Bar (Mockup 2) */}
+      {/* Pagination Bar */}
       <div className="history-pagination-bar">
         <div className="pagination-left">
           <span>

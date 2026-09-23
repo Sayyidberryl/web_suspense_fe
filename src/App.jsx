@@ -76,15 +76,18 @@ export default function App() {
   });
 
   const [tableData, setTableData] = useState([]);
+  const [tableColumns, setTableColumns] = useState([]);
+  const [availableTables, setAvailableTables] = useState([]);
   const [loading, setLoading] = useState(false);
   const [, startTransition] = useTransition();
 
   // Upload & Mapping Flow State
   const [currentUploadFile, setCurrentUploadFile] = useState({
-    fileName: 'mr11_raw_data_export.xlsx',
-    fileSize: '41.4 MB',
+    fileName: 'Bordero_MarineHull_Batch_Unparsed.xlsx',
+    fileSize: '14.2 KB',
     cob: 'Marine Hull',
-    mappingTemplate: 'Template Akseptasi (Marine Hull)'
+    mappingTemplate: 'Template Akseptasi (Marine Hull)',
+    detectedColumns: ['fac_code', 'fac_risk', 'fac_desc', 'fac_old_ref', 'fac_cedant', 'fac_broker', 'fac_insured', 'currency', 'fac_totsi', 'fac_our_amt']
   });
 
   // AI Modal State
@@ -93,6 +96,22 @@ export default function App() {
 
   // Selected file for history detail modal from Dashboard RecentOutput
   const [selectedHistoryDetail, setSelectedHistoryDetail] = useState(null);
+
+  // Load available DWH tables
+  const loadAvailableTables = useCallback(async () => {
+    try {
+      const list = await facLensService.getTables();
+      if (list && list.length > 0) {
+        setAvailableTables(list);
+      }
+    } catch (err) {
+      console.warn('Could not load tables:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAvailableTables();
+  }, [loadAvailableTables]);
 
   // Listen for browser navigation (back/forward)
   useEffect(() => {
@@ -133,6 +152,7 @@ export default function App() {
 
       startTransition(() => {
         setTableData(response.data || []);
+        setTableColumns(response.columns || []);
         setPagination((prev) => ({
           ...prev,
           total: response.total || 0,
@@ -315,17 +335,24 @@ export default function App() {
           {activeTab === 'dashboard' && (
             <DashboardView
               tableData={tableData}
+              tableColumns={tableColumns}
+              tables={availableTables}
               loading={loading}
               filters={filters}
               onFilterChange={handleFilterChange}
               onClearFilters={handleClearFilters}
               onRemoveFilter={handleRemoveFilter}
               selectedTableTab={selectedTableTab}
-              onSelectTableTab={handleSelectTableTab}
+              onSelectTableTab={(newTab) => {
+                handleSelectTableTab(newTab);
+              }}
               pagination={pagination}
               onPageChange={handlePageChange}
               onLimitChange={handleLimitChange}
-              onRefresh={loadData}
+              onRefresh={() => {
+                loadData();
+                loadAvailableTables();
+              }}
               onExport={handleExportData}
               onNavigateToUpload={() => handleTabChange('upload', '/upload')}
               onNavigateToHistory={() => handleTabChange('history', '/history')}
@@ -340,6 +367,11 @@ export default function App() {
               onBack={() => handleTabChange('dashboard', '/')}
               onCancel={() => handleTabChange('dashboard', '/')}
               onStartParsing={handleStartParsing}
+              onNavigateToDashboard={(tabKey) => {
+                setSelectedTableTab(tabKey || 'ai_parsed');
+                loadAvailableTables();
+                handleTabChange('dashboard', '/');
+              }}
             />
           )}
 
