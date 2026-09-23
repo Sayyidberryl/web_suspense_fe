@@ -134,12 +134,7 @@ export default function DataTable({
 
     // Vessel Name formatting
     if (col.isVessel || col.key === 'nama_kapal') {
-      return (
-        <span style={{ fontWeight: 700, color: '#0369a1', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <span>🚢</span>
-          <span>{val}</span>
-        </span>
-      );
+      return <span style={{ fontWeight: 600, color: '#0369a1' }}>{val}</span>;
     }
 
     // Status pill
