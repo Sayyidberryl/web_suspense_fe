@@ -107,17 +107,15 @@
   align-items: flex-end;
   justify-content: space-between;
   border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 0;
   gap: 12px;
   padding-bottom: 0;
-  /* sticky behaviour */
+  padding-top: 8px;
+  /* sticky — stays at the top of .main-content-wrapper scroll */
   position: sticky;
   top: 0;
   z-index: 30;
   background: var(--bg-app);
-  padding-top: 6px;
-  margin: -6px -32px 0;
-  padding-left: 32px;
-  padding-right: 32px;
 }
 
 .sheet-tabs-container {
@@ -448,21 +446,16 @@
 /* FacLens Banner with Customizable Filters (STICKY) */
 .fac-lens-banner {
   background: var(--bg-banner);
-  border: 1px solid #bfdbfe;
-  border-top: none;
+  border: none;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  padding: 16px 24px;
+  padding: 14px 24px;
   margin-bottom: 12px;
   display: flex;
   flex-direction: column;
-  /* sticky behaviour */
+  /* sticky — sits just below the tab bar (~52px) */
   position: sticky;
-  top: 52px;   /* height of the sheet-tab-bar ~ 52px */
+  top: 52px;
   z-index: 29;
-  margin-left: -32px;
-  margin-right: -32px;
-  padding-left: 56px;
-  padding-right: 56px;
   box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.08);
 }
 

@@ -3,7 +3,7 @@
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  /* overflow: hidden removed — needed for sticky thead to work */
   margin-bottom: 24px;
 }
 
@@ -26,7 +26,12 @@
   padding: 14px 16px;
   border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
+  /* sticky column header — sits below filter banner */
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
+
 
 .fac-table tbody tr {
   border-bottom: 1px solid #f3f4f6;

@@ -44,7 +44,7 @@
 }
 
 html, body {
-  min-height: 100%;
+  height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
@@ -53,32 +53,38 @@ html, body {
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  overflow: hidden; /* scroll happens in .main-content-wrapper */
 }
 
 #root {
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 /* Base App Layout */
 .app-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
   background-color: var(--bg-app);
+  overflow: hidden;
 }
 
+/* Main scroll container — sticky elements inside work correctly here */
 .main-content-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
   width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .page-container {
