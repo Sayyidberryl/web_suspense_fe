@@ -147,8 +147,8 @@ export default function App() {
       const response = await facLensService.getTableData({
         tab: selectedTableTab,
         filters,
-        page: pagination.page,
-        limit: pagination.limit
+        page: 1, // Page doesn't matter when fetching all
+        limit: 'all' // Always fetch all rows as requested
       });
 
       startTransition(() => {

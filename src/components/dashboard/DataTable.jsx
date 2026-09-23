@@ -39,7 +39,7 @@ export default function DataTable({
   onPageChange,
   onLimitChange
 }) {
-  const isAllMode = pagination.isAll || pagination.limit >= 1000;
+  const isAllMode = true; // Always render progressively in chunks
   const CHUNK_SIZE = 50;
 
   // Resolve dynamic columns: priority to props from runtime API, fallback to auto-inferred
@@ -179,8 +179,6 @@ export default function DataTable({
   }
 
   const displayedRows = isAllMode ? data.slice(0, renderedCount) : data;
-  const startRecord = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
-  const endRecord = Math.min(pagination.page * pagination.limit, pagination.total);
 
   return (
     <div className="table-card-container">
@@ -264,55 +262,6 @@ export default function DataTable({
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination Footer */}
-      <div className="table-pagination-footer">
-        <div className="pagination-left">
-          <span className="pagination-info">
-            Menampilkan <strong>{startRecord} - {endRecord}</strong> dari <strong>{pagination.total.toLocaleString('id-ID')}</strong> baris data
-          </span>
-
-          <div className="pagination-limit-selector" style={{ marginLeft: 16 }}>
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Baris per halaman:</span>
-            <select
-              value={isAllMode ? 'all' : pagination.limit}
-              onChange={(e) => onLimitChange(e.target.value)}
-              className="limit-select"
-            >
-              <option value="12">12</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="all">Tampilkan Semua ({pagination.total})</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="pagination-right">
-          <button
-            className="btn-page-nav"
-            disabled={pagination.page <= 1}
-            onClick={() => onPageChange(pagination.page - 1)}
-            title="Halaman Sebelumnya"
-          >
-            <ChevronLeft size={16} />
-            <span>Sebelumnya</span>
-          </button>
-
-          <span className="page-indicator">
-            Halaman <strong>{pagination.page}</strong> dari <strong>{pagination.totalPages || 1}</strong>
-          </span>
-
-          <button
-            className="btn-page-nav"
-            disabled={pagination.page >= pagination.totalPages}
-            onClick={() => onPageChange(pagination.page + 1)}
-            title="Halaman Berikutnya"
-          >
-            <span>Berikutnya</span>
-            <ChevronRight size={16} />
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -3,13 +3,21 @@
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: var(--radius-lg);
-  /* overflow: hidden removed — needed for sticky thead to work */
-  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  /* fills remaining vertical space */
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 0;
 }
 
 .table-responsive-wrapper {
   width: 100%;
   overflow-x: auto;
+  overflow-y: auto;
+  /* Instead of hardcoded calc(), use flex to fill parent */
+  flex: 1;
+  min-height: 0;
 }
 
 .fac-table {
@@ -19,6 +27,7 @@
   font-size: 0.85rem;
 }
 
+/* Column headers — sticky top:0 within .table-responsive-wrapper scroll */
 .fac-table thead th {
   background-color: #f8fafc;
   color: #111827;
@@ -26,12 +35,10 @@
   padding: 14px 16px;
   border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
-  /* sticky column header — sits below filter banner */
   position: sticky;
   top: 0;
   z-index: 10;
 }
-
 
 .fac-table tbody tr {
   border-bottom: 1px solid #f3f4f6;

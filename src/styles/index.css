@@ -75,7 +75,7 @@ html, body {
   overflow: hidden;
 }
 
-/* Main scroll container — sticky elements inside work correctly here */
+/* Main layout column — does NOT scroll; table-responsive-wrapper scrolls */
 .main-content-wrapper {
   flex: 1;
   display: flex;
@@ -83,15 +83,18 @@ html, body {
   min-width: 0;
   width: 100%;
   height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .page-container {
   flex: 1;
-  padding: 20px 32px 40px 32px;
+  padding: 20px 32px 0 32px; /* bottom padding removed — table footer handles spacing */
   width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Checkbox specific styling */

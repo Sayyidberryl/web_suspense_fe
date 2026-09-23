@@ -189,7 +189,7 @@ export const facLensService = {
 
     const filterQuery = buildFilterParams(tab, filters);
     const orderClause = 'order=id.asc';
-    const paginationClause = `limit=${limit}&offset=${offset}`;
+    const paginationClause = limit === 'all' ? '' : `limit=${limit}&offset=${offset}`;
 
     const queryParts = [
       'select=*',

@@ -100,7 +100,7 @@
 }
 
 /* ===================================================================
-   Sheet Tab Bar — Excel-style table switcher (STICKY)
+   Sheet Tab Bar — Excel-style table switcher
    =================================================================== */
 .sheet-tab-bar {
   display: flex;
@@ -111,11 +111,8 @@
   gap: 12px;
   padding-bottom: 0;
   padding-top: 8px;
-  /* sticky — stays at the top of .main-content-wrapper scroll */
-  position: sticky;
-  top: 0;
-  z-index: 30;
   background: var(--bg-app);
+  flex-shrink: 0;
 }
 
 .sheet-tabs-container {
@@ -444,18 +441,15 @@
 }
 
 /* FacLens Banner with Customizable Filters (STICKY) */
+/* FacLens Banner with Customizable Filters */
 .fac-lens-banner {
   background: var(--bg-banner);
   border: none;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   padding: 14px 24px;
   margin-bottom: 12px;
   display: flex;
   flex-direction: column;
-  /* sticky — sits just below the tab bar (~52px) */
-  position: sticky;
-  top: 52px;
-  z-index: 29;
+  flex-shrink: 0;
   box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.08);
 }
 
