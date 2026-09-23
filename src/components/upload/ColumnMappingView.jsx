@@ -349,15 +349,6 @@ export default function ColumnMappingView({
         </div>
       </div>
 
-      {/* NEW FEATURE: AI SETTING CARD (Requirement 5) */}
-      <AiSettingCard
-        isAiEnabled={isAiEnabled}
-        onToggleAi={() => setIsAiEnabled((prev) => !prev)}
-        sourceColumns={detectedColumns}
-        onProcessAi={handleProcessAiParsing}
-        isProcessing={isProcessingAi}
-      />
-
       {/* Top 2 Cards: Mapping Controls & File Input */}
       <div className="mapping-top-grid">
         {/* Dark Mapping Bar */}
@@ -631,6 +622,15 @@ export default function ColumnMappingView({
           </div>
         </div>
       </div>
+
+      {/* AI SETTING CARD (Positioned Underneath Mapping Table) */}
+      <AiSettingCard
+        isAiEnabled={isAiEnabled}
+        onToggleAi={() => setIsAiEnabled((prev) => !prev)}
+        sourceColumns={detectedColumns}
+        onProcessAi={handleProcessAiParsing}
+        isProcessing={isProcessingAi}
+      />
 
       {/* AI Result Preview Modal with Before vs After Comparison */}
       <AiResultPreviewModal
