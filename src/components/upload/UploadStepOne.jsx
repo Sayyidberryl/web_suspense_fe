@@ -135,34 +135,7 @@ export default function UploadStepOne({ onProceedToMapping }) {
             Tarik & letakkan berkas di sini atau <span className="dropzone-hint-link">klik untuk memilih file Excel/CSV</span>
           </p>
 
-          {!selectedFile && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18, width: '100%', maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                onClick={loadUnparsedBatchFile}
-                style={{
-                  background: 'linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%)',
-                  border: '1px solid #818cf8',
-                  padding: '10px 16px',
-                  borderRadius: '10px',
-                  fontSize: '0.82rem',
-                  color: '#4338ca',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 2px 4px rgba(99, 102, 241, 0.15)'
-                }}
-              >
-                <Sparkles size={16} />
-                <span>📥 Muat Data Mentah Marine Hull</span>
-              </button>
 
-
-            </div>
-          )}
         </div>
 
         {/* Right Info & Settings Sidebar */}
