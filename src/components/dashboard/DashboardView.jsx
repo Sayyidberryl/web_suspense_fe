@@ -49,34 +49,54 @@ export default function DashboardView({
         onExport={onExport}
       />
 
-      {/* ② FAC LENS Filter Banner — STATIC, never moves */}
-      {!isAiParsedTab && (
-        <FacLensBanner
-          filters={filters}
-          onFilterChange={onFilterChange}
-          activeTab={selectedTableTab}
-        />
-      )}
+      {openTabs.length === 0 ? (
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#64748b',
+          fontSize: '1.1rem',
+          fontWeight: 500,
+          background: '#f8fafc',
+          border: '1px dashed #cbd5e1',
+          margin: '20px',
+          borderRadius: '8px'
+        }}>
+          Tidak ada data yang ditampilkan
+        </div>
+      ) : (
+        <>
+          {/* ② FAC LENS Filter Banner — STATIC, never moves */}
+          {!isAiParsedTab && (
+            <FacLensBanner
+              filters={filters}
+              onFilterChange={onFilterChange}
+              activeTab={selectedTableTab}
+            />
+          )}
 
-      {/* Active filter chips (only when filters active) */}
-      {!isAiParsedTab && (
-        <TabNavigation
-          filters={filters}
-          onClearFilters={onClearFilters}
-          onRemoveFilter={onRemoveFilter}
-        />
-      )}
+          {/* Active filter chips (only when filters active) */}
+          {!isAiParsedTab && (
+            <TabNavigation
+              filters={filters}
+              onClearFilters={onClearFilters}
+              onRemoveFilter={onRemoveFilter}
+            />
+          )}
 
-      {/* ③④⑤ Data Table — column header sticky, rows scroll, pagination footer static */}
-      <DataTable
-        data={tableData}
-        columns={tableColumns}
-        loading={loading}
-        activeTab={selectedTableTab}
-        pagination={pagination}
-        onPageChange={onPageChange}
-        onLimitChange={onLimitChange}
-      />
+          {/* ③④⑤ Data Table — column header sticky, rows scroll, pagination footer static */}
+          <DataTable
+            data={tableData}
+            columns={tableColumns}
+            loading={loading}
+            activeTab={selectedTableTab}
+            pagination={pagination}
+            onPageChange={onPageChange}
+            onLimitChange={onLimitChange}
+          />
+        </>
+      )}
     </div>
   );
 }

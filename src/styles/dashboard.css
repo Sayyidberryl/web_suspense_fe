@@ -120,7 +120,7 @@
   align-items: flex-end;
   gap: 2px;
   flex-wrap: wrap;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sheet-tab {
