@@ -1,230 +1,294 @@
 /**
- * FacLens Service Layer
- * Directly connected to Supabase PostgreSQL via FastAPI Backend.
+ * Supabase Direct Service Layer
+ * Fetches data directly from Supabase PostgREST API — no backend required.
  */
 
-import apiClient from './apiClient';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://uaoysegountarjanafbb.supabase.co';
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhb3lzZWdvdW50YXJqYW5hZmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNDQzNzUsImV4cCI6MjEwNTYyMDM3NX0.j6y0DQ1RflMJsiUiGSyADnvjkGDQttTH4Vq5HIM2xJo';
+
+const SUPABASE_HEADERS = {
+  apikey: SUPABASE_KEY,
+  Authorization: `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json',
+  Prefer: 'count=exact',
+};
+
+/** Table configuration registry */
+export const TABLE_CONFIG = [
+  {
+    id: 'acceptance',
+    tableName: 'FACUL_ETL_MH_AKSEPTASI',
+    label: 'Akseptasi & Underwriting',
+    fullLabel: 'Marine Hull – Akseptasi & Underwriting',
+    description: 'Tabel DWH akseptasi polis, slip penutupan, dan portofolio risiko kapal',
+    isAiParsed: false,
+  },
+  {
+    id: 'loss_pla',
+    tableName: 'FACUL_ETL_MH_LOSS_PLA',
+    label: 'Loss Advice (PLA)',
+    fullLabel: 'Marine Hull – Loss Advice (PLA / Outstanding)',
+    description: 'Tabel klaim loss yang masih outstanding / belum diselesaikan',
+    isAiParsed: false,
+  },
+  {
+    id: 'loss_sla',
+    tableName: 'FACUL_ETL_MH_LOSS_SETTLE',
+    label: 'Settled Claims (SLA)',
+    fullLabel: 'Marine Hull – Settled Claims (SLA)',
+    description: 'Tabel klaim loss yang telah diselesaikan (settled)',
+    isAiParsed: false,
+  },
+];
+
+/** Map column key → human-readable label */
+const COL_LABEL_MAP = {
+  fac_code: 'FAC Code',
+  reff_number: 'Ref No.',
+  direct: 'Cedant (Direct)',
+  broker: 'Broker',
+  nama_tertanggung: 'Tertanggung',
+  afiliasi_tertanggung: 'Afiliasi',
+  nama_tertanggung_loss: 'Tertanggung Loss',
+  nama_kapal: 'Nama Kapal',
+  code_kapal: 'Kode Kapal',
+  sum_insured: 'Sum Insured',
+  loss_amount: 'Loss Amount',
+  currency: 'Currency',
+  date_of_loss: 'Tgl Loss',
+  loss_cause: 'Penyebab Loss',
+  status: 'Status',
+  coverage: 'Coverage',
+  start_date: 'Start Date',
+  end_date: 'End Date',
+  acceptance_status: 'Acceptance Status',
+  type_of_vessel: 'Tipe Kapal',
+  size_of_vessel: 'Ukuran Kapal',
+  year_of_built: 'Thn Bangun',
+  type_of_material: 'Material',
+  classification: 'Klasifikasi',
+  flag: 'Bendera',
+  last_docking_date: 'Last Docking',
+  jenis_muatan: 'Jenis Muatan',
+  trading_area: 'Area Trading',
+  insured_value: 'Nilai Pertanggungan',
+  premium_rate: 'Premium Rate',
+  premium_amount: 'Premium Amount',
+  ric: 'RIC',
+  riu_share: 'RIU Share',
+  riu_gross_premium: 'Gross Premium',
+  riu_net_premium: 'Net Premium',
+  loss_detail: 'Detail Loss',
+  settled_or_os: 'Settled/OS',
+};
+
+/** Auto-generate column metadata from a sample row */
+function inferColumns(sampleRow, tableId) {
+  if (!sampleRow) return [];
+  const isAcceptance = tableId === 'acceptance';
+  return Object.keys(sampleRow)
+    .filter((k) => {
+      if (k === 'id') return false;
+      // Remove legacy `status` for acceptance (use acceptance_status instead)
+      if (isAcceptance && k === 'status') return false;
+      return true;
+    })
+    .map((k) => {
+      const isAmt = /(amount|sum_insured|value|premium|insured_value|riu)/i.test(k);
+      const isDate = /(date|created_at)/i.test(k);
+      const isCode = /(fac_code|reff_number|code_kapal|ric)/i.test(k);
+      const isVessel = /nama_kapal/i.test(k);
+      return {
+        key: k,
+        label: COL_LABEL_MAP[k] || k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+        dataType: isAmt ? 'NUMERIC' : isDate ? 'DATE' : 'TEXT',
+        isAmount: isAmt,
+        isDate,
+        isCode,
+        isVessel,
+        bold: k === 'fac_code' || k === 'nama_kapal',
+      };
+    });
+}
+
+/** Build PostgREST filter query string from filter object */
+function buildFilterParams(tableId, filters = {}) {
+  const parts = [];
+
+  const addIlike = (col, val) => {
+    if (val && val.trim()) {
+      parts.push(`${col}=ilike.%25${encodeURIComponent(val.trim())}%25`);
+    }
+  };
+
+  // Common filters
+  addIlike('fac_code', filters.facCode);
+  addIlike('broker', filters.broker);
+  addIlike('currency', filters.currency);
+  addIlike('loss_cause', filters.lossCause);
+  if (filters.dateOfLoss && filters.dateOfLoss.trim()) {
+    parts.push(`date_of_loss=eq.${encodeURIComponent(filters.dateOfLoss.trim())}`);
+  }
+
+  if (tableId === 'acceptance') {
+    addIlike('direct', filters.companyName);
+    addIlike('nama_tertanggung', filters.insuredName);
+    addIlike('nama_kapal', filters.vesselName);
+    addIlike('code_kapal', filters.vesselCode);
+    addIlike('acceptance_status', filters.status);
+    // global search across key columns
+    if (filters.globalSearch && filters.globalSearch.trim()) {
+      addIlike('fac_code', filters.globalSearch);
+    }
+  } else {
+    // loss_pla / loss_sla
+    addIlike('direct', filters.companyName);
+    addIlike('nama_tertanggung_loss', filters.insuredLossName);
+    addIlike('nama_kapal', filters.vesselLossName);
+    addIlike('code_kapal', filters.vesselLossCode);
+    addIlike('status', filters.status);
+    if (filters.globalSearch && filters.globalSearch.trim()) {
+      addIlike('fac_code', filters.globalSearch);
+    }
+  }
+
+  return parts.join('&');
+}
 
 export const facLensService = {
   /**
-   * Fetch all available DWH tables with runtime counts and metadata
+   * Get list of available DWH tables with live row counts
    */
   async getTables() {
-    try {
-      const res = await apiClient.get('/api/tables');
-      if (Array.isArray(res) && res.length > 0) {
-        return res;
-      }
-    } catch (err) {
-      console.warn('Failed to fetch tables from backend:', err);
-    }
-    return [
-      { id: 'acceptance', tableName: 'FACUL_ETL_MH_AKSEPTASI', label: 'Marine Hull - Akseptasi & Underwriting', isAiParsed: false },
-      { id: 'loss_pla', tableName: 'FACUL_ETL_MH_LOSS_PLA', label: 'Marine Hull - Loss Advice (PLA / Outstanding)', isAiParsed: false },
-      { id: 'loss_sla', tableName: 'FACUL_ETL_MH_LOSS_SETTLE', label: 'Marine Hull - Settled Claims (SLA)', isAiParsed: false },
-      { id: 'ai_parsed', tableName: 'FACUL_ETL_MH_PARSED_AI', label: 'Marine Hull - Hasil Normalisasi AI (Entitas Granular)', isAiParsed: true }
-    ];
+    const results = await Promise.all(
+      TABLE_CONFIG.map(async (cfg) => {
+        try {
+          const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/${cfg.tableName}?select=id&limit=1`,
+            { headers: SUPABASE_HEADERS }
+          );
+          const cr = res.headers.get('content-range') || '';
+          const total = cr.includes('/') ? parseInt(cr.split('/')[1], 10) : 0;
+          return { ...cfg, count: total, columnsCount: 0 };
+        } catch {
+          return { ...cfg, count: 0, columnsCount: 0 };
+        }
+      })
+    );
+    return results;
   },
 
-
   /**
-   * Fetch Marine Hull table data dynamically based on active table and filters.
-   * Dynamically returns runtime columns metadata!
+   * Fetch paginated data from a given DWH table directly via Supabase.
+   * Returns full columns (no hardcoding), inferred from the first row.
    */
-  async getTableData({
-    tab = 'acceptance',
-    filters = {},
-    page = 1,
-    limit = 12,
-  } = {}) {
-    try {
-      const params = {
-        table: tab,
-        page,
-        limit,
-        fac_code: filters.facCode || '',
-        reff_number: filters.reffNumber || '',
-        company_name: filters.companyName || filters.direct || '',
-        broker: filters.broker || '',
-        insured_name: filters.insuredName || '',
-        insured_loss_name: filters.insuredLossName || '',
-        vessel_name: filters.vesselName || '',
-        vessel_loss_name: filters.vesselLossName || '',
-        vessel_code: filters.vesselCode || '',
-        vessel_loss_code: filters.vesselLossCode || '',
-        status: filters.status || '',
-        loss_cause: filters.lossCause || '',
-        currency: filters.currency || '',
-        date_of_loss: filters.dateOfLoss || '',
-        search: filters.globalSearch || '',
-      };
+  async getTableData({ tab = 'acceptance', filters = {}, page = 1, limit = 25 } = {}) {
+    const cfg = TABLE_CONFIG.find((t) => t.id === tab) || TABLE_CONFIG[0];
+    const tableName = cfg.tableName;
+    const offset = (page - 1) * limit;
 
-      if (filters.selectedFile && filters.selectedFile.cedant && !params.company_name) {
-        params.company_name = filters.selectedFile.cedant;
+    const filterQuery = buildFilterParams(tab, filters);
+    const orderClause = 'order=id.asc';
+    const paginationClause = `limit=${limit}&offset=${offset}`;
+
+    const queryParts = [
+      'select=*',
+      paginationClause,
+      orderClause,
+      filterQuery,
+    ].filter(Boolean);
+
+    const url = `${SUPABASE_URL}/rest/v1/${tableName}?${queryParts.join('&')}`;
+
+    try {
+      const res = await fetch(url, { headers: SUPABASE_HEADERS });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Supabase error ${res.status}: ${errText}`);
       }
 
-      // Call generic dynamic table endpoint
-      const res = await apiClient.get('/api/table-data', params);
+      const contentRange = res.headers.get('content-range') || '';
+      const total = contentRange.includes('/')
+        ? parseInt(contentRange.split('/')[1], 10)
+        : 0;
+
+      const data = await res.json();
+      const columns = inferColumns(data[0] || null, tab);
+
       return {
-        data: res.data || [],
-        columns: res.columns || [],
-        total: res.total || 0,
-        page: res.page || page,
-        limit: res.limit || limit,
-        totalPages: res.totalPages || Math.max(1, Math.ceil((res.total || 0) / limit)),
-        tableName: res.tableName || tab,
-        error: null
+        data,
+        columns,
+        total,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+        tableName,
+        tableId: tab,
+        error: null,
       };
     } catch (err) {
-      console.error('Failed to fetch dynamic table data from backend:', err);
+      console.error('Failed to fetch from Supabase:', err);
       return {
         data: [],
         columns: [],
         total: 0,
-        page: 1,
+        page,
         limit,
         totalPages: 1,
-        error: err.message || 'Gagal terhubung ke backend server (port 8000)'
+        tableName,
+        tableId: tab,
+        error: err.message || 'Gagal terhubung ke Supabase',
       };
     }
   },
 
   /**
-   * Inspect user-uploaded Excel or CSV file on server
+   * Export current data to CSV — fetches ALL rows for the active table (up to 5000).
    */
-  async inspectFile(file) {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch(`${apiClient.baseUrl}/inspect-file`, {
-        method: 'POST',
-        body: formData
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (err) {
-      console.warn('Server file inspection failed, will fallback to client parser:', err);
-    }
-    return null;
-  },
+  async exportToCsv(tableId = 'acceptance', filename, filters = {}) {
+    const cfg = TABLE_CONFIG.find((t) => t.id === tableId) || TABLE_CONFIG[0];
+    const csvFilename = filename || `export_${tableId}_${new Date().toISOString().slice(0, 10)}.csv`;
 
-  /**
-   * Get curated unparsed raw Marine Hull records for AI entity extraction
-   */
-  async getDemoUnparsedData() {
     try {
-      return await apiClient.get('/api/unparsed-batch');
-    } catch (err) {
-      // Fallback to /api/demo-unparsed if needed
-      try {
-        return await apiClient.get('/api/demo-unparsed');
-      } catch (e) {
-        console.warn('Failed to fetch unparsed batch data:', err);
-        return null;
-      }
-    }
-  },
+      const filterQuery = buildFilterParams(tableId, filters);
+      const queryParts = ['select=*', 'limit=5000', 'order=id.asc', filterQuery].filter(Boolean);
+      const url = `${SUPABASE_URL}/rest/v1/${cfg.tableName}?${queryParts.join('&')}`;
+      const res = await fetch(url, { headers: SUPABASE_HEADERS });
+      const data = await res.json();
 
-  async getUnparsedBatchData() {
-    return this.getDemoUnparsedData();
-  },
+      if (!data || !data.length) return;
 
-  /**
-   * Execute AI entity extraction & multi-vessel exploding
-   */
-  async runAiParse(payload) {
-    try {
-      return await apiClient.post('/api/ai-parse', payload);
+      const isAcceptance = tableId === 'acceptance';
+      const keys = Object.keys(data[0]).filter(
+        (k) => k !== 'id' && !(isAcceptance && k === 'status')
+      );
+      const headerLabels = keys.map(
+        (k) => COL_LABEL_MAP[k] || k.replace(/_/g, ' ').toUpperCase()
+      );
+
+      const rows = data.map((item) =>
+        keys.map((k) => {
+          const val = item[k];
+          if (val === null || val === undefined) return '""';
+          return `"${String(val).replace(/"/g, '""')}"`;
+        })
+      );
+
+      const csvContent =
+        'data:text/csv;charset=utf-8,\uFEFF' +
+        [headerLabels.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
+      const link = document.createElement('a');
+      link.setAttribute('href', encodeURI(csvContent));
+      link.setAttribute('download', csvFilename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err) {
-      console.error('Failed to execute AI parse:', err);
-      throw err;
+      console.error('Export failed:', err);
     }
   },
-
-  /**
-   * AI Prompt Templates Management
-   */
-  async getAiPromptTemplates() {
-    try {
-      return await apiClient.get('/api/ai-prompt-templates');
-    } catch (err) {
-      console.warn('Failed to fetch AI prompt templates:', err);
-      return [];
-    }
-  },
-
-  async saveAiPromptTemplate(template) {
-    try {
-      return await apiClient.post('/api/ai-prompt-templates', template);
-    } catch (err) {
-      console.error('Failed to save AI prompt template:', err);
-      throw err;
-    }
-  },
-
-  async deleteAiPromptTemplate(id) {
-    try {
-      return await apiClient.delete(`/api/ai-prompt-templates/${id}`);
-    } catch (err) {
-      console.error('Failed to delete AI prompt template:', err);
-      throw err;
-    }
-  },
-
-
-  /**
-   * Fetch KPI summary statistics directly from database
-   */
-  async getDashboardStats() {
-    try {
-      const res = await apiClient.get('/api/stats');
-      return res || {
-        totalRecords: 0,
-        totalClaimValue: 0,
-        uniqueVessels: 0,
-        uniqueCedants: 0,
-        slaResolvedRate: '0%',
-      };
-    } catch (err) {
-      console.error('Failed to fetch dashboard stats:', err);
-      return {
-        totalRecords: 0,
-        totalClaimValue: 0,
-        uniqueVessels: 0,
-        uniqueCedants: 0,
-        slaResolvedRate: '0%',
-      };
-    }
-  },
-
-  /**
-   * Utility to export real dataset to CSV
-   */
-  exportToCsv(data, filename = 'fac_lens_export.csv') {
-    if (!data || !data.length) return;
-
-    // Detect columns from first item or use standard Excel 24 columns
-    const keys = Object.keys(data[0]).filter((k) => k !== 'id');
-    const headerLabels = keys.map((k) => k.replace(/_/g, ' ').toUpperCase());
-
-    const rows = data.map((item) =>
-      keys.map((k) => {
-        const val = item[k];
-        if (val === null || val === undefined) return '""';
-        return `"${String(val).replace(/"/g, '""')}"`;
-      })
-    );
-
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headerLabels.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
 };
 
 export default facLensService;

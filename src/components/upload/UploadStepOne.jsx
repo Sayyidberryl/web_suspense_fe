@@ -20,7 +20,7 @@ export default function UploadStepOne({ onProceedToMapping }) {
   const handleFileSelect = async (file) => {
     if (!file) return;
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-    
+
     // Parse headers in browser via SheetJS
     const cols = await mappingService.parseFileHeaders(file);
     const finalCols = cols && cols.length > 0 ? cols : UNPARSED_10_COLUMNS;
@@ -93,8 +93,8 @@ export default function UploadStepOne({ onProceedToMapping }) {
     <div className="upload-container">
       {/* Dark Top Banner */}
       <div className="upload-banner-dark">
-        <h2>Extract, Transform & Load (ETL) dengan AI Parsing</h2>
-        <p>Unggah berkas mentah untuk divalidasi, diekstrak entitasnya menggunakan AI Parsing Engine, dan dimuat ke sistem analitik Indore.</p>
+        <h2>Extract, Transform & Load (ETL)</h2>
+        <p>Unggah berkas mentah untuk divalidasi, diekstrak entitasnya menggunakan Parsing Engine, dan dimuat ke sistem analitik Indore.</p>
       </div>
 
       <div className="upload-grid">

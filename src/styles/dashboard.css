@@ -99,6 +99,175 @@
   background: #fde68a;
 }
 
+/* ===================================================================
+   Sheet Tab Bar — Excel-style table switcher
+   =================================================================== */
+.sheet-tab-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 16px;
+  gap: 12px;
+  padding-bottom: 0;
+}
+
+.sheet-tabs-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+.sheet-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px 9px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+  position: relative;
+  bottom: -2px;
+}
+
+.sheet-tab:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.sheet-tab.active {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  border-bottom: 2px solid #ffffff;
+  color: #1e40af;
+  font-weight: 700;
+  box-shadow: 0 -2px 8px rgba(37, 99, 235, 0.06);
+}
+
+.sheet-tab-label {
+  line-height: 1;
+}
+
+.sheet-tab-count {
+  background: #eff6ff;
+  color: #3b82f6;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.sheet-tab.active .sheet-tab-count {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.sheet-tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  flex-shrink: 0;
+}
+
+/* ===================================================================
+   Table Pagination Footer
+   =================================================================== */
+.table-pagination-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #fafafa;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pagination-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pagination-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-info {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.pagination-limit-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.limit-select {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  color: #374151;
+  cursor: pointer;
+  outline: none;
+}
+
+.page-indicator {
+  font-size: 0.82rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.btn-page-nav {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btn-page-nav:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.btn-page-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* =================================================================== */
+/* Executive Header Section (kept for non-dashboard pages)             */
+/* =================================================================== */
+.welcome-section {
+  display: none;
+}
+
+
 /* Top Control Bar */
 .top-control-bar {
   display: flex;
@@ -112,6 +281,7 @@
   gap: 16px;
   flex-wrap: wrap;
 }
+
 
 .control-left {
   display: flex;

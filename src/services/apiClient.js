@@ -3,7 +3,18 @@
  * Clean architecture wrapper for consuming backend REST API or Database endpoints.
  */
 
-const DEFAULT_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://superetlapi.vercel.app/api').replace(/\/+$/, '');
+const resolveDefaultBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+      return envUrl.replace(/\/+$/, '');
+    }
+    return 'https://superetlapi.vercel.app/api';
+  }
+  return (envUrl || 'https://superetlapi.vercel.app/api').replace(/\/+$/, '');
+};
+
+const DEFAULT_BASE_URL = resolveDefaultBaseUrl();
 
 class ApiClient {
   constructor(baseUrl = DEFAULT_BASE_URL) {

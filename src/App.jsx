@@ -7,7 +7,7 @@ import ColumnMappingView from './components/upload/ColumnMappingView';
 import AiProcessingModal from './components/upload/AiProcessingModal';
 import HistoryView from './components/history/HistoryView';
 import facLensService from './services/facLensService';
-import historyService from './services/historyService';
+
 
 import './styles/index.css';
 import './styles/sidebar.css';
@@ -219,7 +219,7 @@ export default function App() {
   };
 
   const handleExportData = () => {
-    facLensService.exportToCsv(tableData, `export_${selectedTableTab}_data.csv`);
+    facLensService.exportToCsv(selectedTableTab, `export_${selectedTableTab}_data.csv`, filters);
   };
 
   // Upload -> Mapping Navigation
@@ -355,9 +355,6 @@ export default function App() {
                 loadAvailableTables();
               }}
               onExport={handleExportData}
-              onNavigateToUpload={() => handleTabChange('upload', '/upload')}
-              onNavigateToHistory={() => handleTabChange('history', '/history')}
-              onSelectDetail={handleSelectRecentDetail}
             />
           )}
 
