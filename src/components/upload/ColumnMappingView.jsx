@@ -497,13 +497,12 @@ export default function ColumnMappingView({
                         fontWeight: 700,
                         color: '#0f172a',
                         fontSize: '0.85rem',
-                        width: '90%',
+                        width: '100%',
                         padding: '2px 4px'
                       }}
                       onFocus={(e) => e.target.style.borderColor = '#93c5fd'}
                       onBlur={(e) => e.target.style.borderColor = 'transparent'}
                     />
-                    {isOptional && <span style={{ marginLeft: 4, fontSize: '0.7rem', color: '#94a3b8' }}>(Opsional)</span>}
                   </td>
                   <td>
                     <select
