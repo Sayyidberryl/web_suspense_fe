@@ -200,7 +200,7 @@ export default function AiSettingCard({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>
-                AI Setting & Entity Extraction
+                Parsing Engine Settings
               </h3>
               <span style={{
                 background: isAiEnabled ? '#f5f3ff' : '#f8fafc',
@@ -211,7 +211,7 @@ export default function AiSettingCard({
                 fontSize: '0.72rem',
                 fontWeight: 700
               }}>
-                AI Entity Resolution Engine
+                Parsing Engine
               </span>
             </div>
             <p style={{
@@ -220,8 +220,8 @@ export default function AiSettingCard({
               color: '#64748b'
             }}>
               {isAiEnabled
-                ? 'Model AI aktif untuk memecah data teks jamak menjadi baris individual terstruktur (Multi-Vessel Exploding)'
-                : 'Nonaktif: Pemetaan berjalan kolom-ke-kolom standar tanpa pemrosesan bahasa alami (NLP)'}
+                ? 'Parsing Engine aktif untuk memecah data teks jamak menjadi baris individual terstruktur'
+                : 'Nonaktif: Pemetaan berjalan kolom-ke-kolom standar tanpa parsing engine'}
             </p>
           </div>
         </div>
@@ -233,7 +233,7 @@ export default function AiSettingCard({
             fontWeight: 700,
             color: isAiEnabled ? '#4f46e5' : '#64748b'
           }}>
-            AI PARSING {isAiEnabled ? 'ON' : 'OFF'}
+            PARSING ENGINE {isAiEnabled ? 'ON' : 'OFF'}
           </span>
           <button
             type="button"
@@ -249,7 +249,7 @@ export default function AiSettingCard({
               padding: 2,
               transition: 'background 0.25s ease'
             }}
-            title={isAiEnabled ? 'Nonaktifkan AI Setting' : 'Aktifkan AI Setting'}
+            title={isAiEnabled ? 'Nonaktifkan Parsing Engine' : 'Aktifkan Parsing Engine'}
           >
             <div style={{
               width: 24,
@@ -529,7 +529,7 @@ export default function AiSettingCard({
               gap: '10px'
             }}>
               <label style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a' }}>
-                3. Instruksi Prompt AI Engine:
+                3. Instruksi / Format Parsing:
               </label>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -679,7 +679,7 @@ export default function AiSettingCard({
           }}>
             <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span>⚡</span>
-              <span>Menjalankan ekstraksi & normalisasi otomatis menggunakan AI Parsing Engine untuk memetakan entitas kapal ke tabel granular DWH.</span>
+              <span>Menjalankan ekstraksi & normalisasi otomatis menggunakan Parsing Engine untuk memetakan entitas kapal ke tabel granular DWH.</span>
             </div>
 
             <button
@@ -707,12 +707,12 @@ export default function AiSettingCard({
               {isProcessing ? (
                 <>
                   <span className="corporate-spinner" style={{ width: 16, height: 16, borderTopColor: '#ffffff' }} />
-                  <span>Sedang Memproses AI...</span>
+                  <span>Sedang Memproses Parsing...</span>
                 </>
               ) : (
                 <>
                   <Sparkles size={16} />
-                  <span>Proses AI Parsing Engine</span>
+                  <span>Jalankan Parsing Engine</span>
                 </>
               )}
             </button>
