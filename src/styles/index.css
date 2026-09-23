@@ -121,7 +121,7 @@ html, body {
 }
 
 .page-container.embed-mode {
-  padding: 16px 24px 32px 24px;
+  padding: 0;
   width: 100%;
   max-width: 100%;
 }
