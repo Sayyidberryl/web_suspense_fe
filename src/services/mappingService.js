@@ -114,7 +114,7 @@ export const SYSTEM_TEMPLATES = [
     cob: 'Marine Hull',
     target_schema: 'FACUL_ETL_MH_AKSEPTASI',
     column_count: 29,
-    description: 'Pemetaan skema akseptasi dan underwriting Marine Hull',
+    description: 'Pemetaan skema MH - Data Akseptasi Marine Hull',
     mappings: clearSourceColumns(MAPPINGS_AKSEPTASI_MH)
   },
   {
