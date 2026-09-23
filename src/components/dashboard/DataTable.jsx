@@ -34,7 +34,7 @@ export default function DataTable({
   data = [],
   columns: propColumns = [],
   loading = false,
-  activeTab = 'loss_pla',
+  activeTab = 'acceptance',
   pagination = { page: 1, limit: 12, total: 0, totalPages: 1, isAll: false },
   onPageChange,
   onLimitChange

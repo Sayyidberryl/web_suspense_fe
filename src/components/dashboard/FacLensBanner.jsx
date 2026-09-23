@@ -45,9 +45,9 @@ const DEFAULT_COLUMNS = {
 export default function FacLensBanner({
   filters = {},
   onFilterChange,
-  activeTab = 'loss_pla'
+  activeTab = 'acceptance'
 }) {
-  const availableColumns = TABLE_COLUMN_DEFINITIONS[activeTab] || TABLE_COLUMN_DEFINITIONS.loss_pla;
+  const availableColumns = TABLE_COLUMN_DEFINITIONS[activeTab] || TABLE_COLUMN_DEFINITIONS.acceptance;
 
   const [visibleColumns, setVisibleColumns] = useState(() => {
     return DEFAULT_COLUMNS[activeTab] || availableColumns.slice(0, 5).map((c) => c.key);

@@ -3,15 +3,15 @@ import { RefreshCw, Download, Database, Sparkles } from 'lucide-react';
 import facLensService from '../../services/facLensService';
 
 export default function TopControlBar({
-  selectedTableTab = 'loss_pla',
+  selectedTableTab = 'acceptance',
   onSelectTableTab,
   onRefresh,
   onExport,
   tables: propTables = null
 }) {
   const [tables, setTables] = useState([
-    { id: 'loss_pla', label: 'Marine Hull - Loss Advice (PLA / Outstanding)' },
     { id: 'acceptance', label: 'Marine Hull - Akseptasi & Underwriting' },
+    { id: 'loss_pla', label: 'Marine Hull - Loss Advice (PLA / Outstanding)' },
     { id: 'loss_sla', label: 'Marine Hull - Settled Claims (SLA)' },
     { id: 'ai_parsed', label: 'Marine Hull - Hasil Normalisasi AI (Entitas Granular)', isAiParsed: true }
   ]);

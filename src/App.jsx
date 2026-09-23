@@ -44,11 +44,11 @@ export default function App() {
   const [currentRoute, setCurrentRoute] = useState(initialRoute.route);
   const [activeTab, setActiveTab] = useState(initialRoute.tab); // 'dashboard' | 'mapping' | 'upload' | 'upload-mapping' | 'history'
   
-  // Tab switcher for the 3 PostgreSQL tables:
+  // Tab switcher for the DWH tables:
+  // 'acceptance' -> FACUL_ETL_MH_AKSEPTASI (Marine Hull - Akseptasi & Underwriting)
   // 'loss_pla'   -> FACUL_ETL_MH_LOSS_PLA
-  // 'acceptance' -> FACUL_ETL_MH_AKSEPTASI
   // 'loss_sla'   -> FACUL_ETL_MH_LOSS_SETTLE
-  const [selectedTableTab, setSelectedTableTab] = useState('loss_pla');
+  const [selectedTableTab, setSelectedTableTab] = useState('acceptance');
 
   // Dynamic Pagination
   const [pagination, setPagination] = useState({
@@ -79,6 +79,7 @@ export default function App() {
   const [tableColumns, setTableColumns] = useState([]);
   const [availableTables, setAvailableTables] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [connectionError, setConnectionError] = useState(null);
   const [, startTransition] = useTransition();
 
   // Upload & Mapping Flow State

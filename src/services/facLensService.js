@@ -19,8 +19,8 @@ export const facLensService = {
       console.warn('Failed to fetch tables from backend:', err);
     }
     return [
-      { id: 'loss_pla', tableName: 'FACUL_ETL_MH_LOSS_PLA', label: 'Marine Hull - Loss Advice (PLA / Outstanding)', isAiParsed: false },
       { id: 'acceptance', tableName: 'FACUL_ETL_MH_AKSEPTASI', label: 'Marine Hull - Akseptasi & Underwriting', isAiParsed: false },
+      { id: 'loss_pla', tableName: 'FACUL_ETL_MH_LOSS_PLA', label: 'Marine Hull - Loss Advice (PLA / Outstanding)', isAiParsed: false },
       { id: 'loss_sla', tableName: 'FACUL_ETL_MH_LOSS_SETTLE', label: 'Marine Hull - Settled Claims (SLA)', isAiParsed: false },
       { id: 'ai_parsed', tableName: 'FACUL_ETL_MH_PARSED_AI', label: 'Marine Hull - Hasil Normalisasi AI (Entitas Granular)', isAiParsed: true }
     ];
@@ -32,7 +32,7 @@ export const facLensService = {
    * Dynamically returns runtime columns metadata!
    */
   async getTableData({
-    tab = 'loss_pla',
+    tab = 'acceptance',
     filters = {},
     page = 1,
     limit = 12,
@@ -72,7 +72,8 @@ export const facLensService = {
         page: res.page || page,
         limit: res.limit || limit,
         totalPages: res.totalPages || Math.max(1, Math.ceil((res.total || 0) / limit)),
-        tableName: res.tableName || tab
+        tableName: res.tableName || tab,
+        error: null
       };
     } catch (err) {
       console.error('Failed to fetch dynamic table data from backend:', err);
@@ -83,6 +84,7 @@ export const facLensService = {
         page: 1,
         limit,
         totalPages: 1,
+        error: err.message || 'Gagal terhubung ke backend server (port 8000)'
       };
     }
   },
