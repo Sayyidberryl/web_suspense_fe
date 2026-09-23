@@ -8,7 +8,10 @@
   /* fills remaining vertical space */
   flex: 1;
   min-height: 0;
-  margin-bottom: 16px;
+  margin-bottom: 0;
+  border-bottom: none; /* remove bottom border so it blends with screen edge */
+  border-bottom-left-radius: 0; /* remove bottom radius */
+  border-bottom-right-radius: 0;
 }
 
 .table-responsive-wrapper {
@@ -18,7 +21,7 @@
   /* Instead of hardcoded calc(), use flex to fill parent */
   flex: 1;
   min-height: 0;
-  padding-bottom: 16px; /* prevent horizontal scrollbar from overlapping the last row */
+  padding-bottom: 4px; /* tiny padding so horizontal scrollbar doesn't completely block text */
 }
 
 .fac-table {
