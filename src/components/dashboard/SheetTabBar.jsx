@@ -14,8 +14,13 @@ export default function SheetTabBar({
   onCloseTab,
   onRefresh,
   onExport,
+  tabTitles = {},
+  onRenameTab,
+  isExporting = false,
 }) {
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [editingTabId, setEditingTabId] = useState(null);
+  const [editInput, setEditInput] = useState('');
   const addMenuRef = useRef(null);
 
   // Close add menu when clicking outside
@@ -33,9 +38,22 @@ export default function SheetTabBar({
     };
   }, [isAddMenuOpen]);
 
+  const handleStartRename = (e, tabId, initialVal) => {
+    e.stopPropagation();
+    setEditingTabId(tabId);
+    setEditInput(initialVal);
+  };
+
+  const handleSaveRename = (tabId) => {
+    if (editInput && editInput.trim() && onRenameTab) {
+      onRenameTab(tabId, editInput.trim());
+    }
+    setEditingTabId(null);
+  };
+
   // Derived state
-  const displayedTables = openTabs.map(id => tables.find(t => t.id === id)).filter(Boolean);
-  const availableToAdd = tables.filter(t => !openTabs.includes(t.id));
+  const displayedTables = openTabs.map((id) => tables.find((t) => t.id === id)).filter(Boolean);
+  const availableToAdd = tables.filter((t) => !openTabs.includes(t.id));
 
   return (
     <div className="sheet-tab-bar">
@@ -43,15 +61,40 @@ export default function SheetTabBar({
       <div className="sheet-tabs-container">
         {displayedTables.map((tbl) => {
           const isActive = tbl.id === selectedTab;
+          const currentLabel = (tabTitles && tabTitles[tbl.id]) || tbl.label || tbl.name || tbl.id;
+          const isEditing = editingTabId === tbl.id;
+
           return (
             <div
               key={tbl.id}
               className={`sheet-tab ${isActive ? 'active' : ''}`}
               onClick={() => onSelectTab(tbl.id)}
-              title={tbl.fullLabel || tbl.label}
+              title={isEditing ? '' : `${currentLabel} (Klik dua kali untuk mengubah nama)`}
             >
-              <span className="sheet-tab-label">{tbl.label}</span>
-              <button 
+              {isEditing ? (
+                <input
+                  type="text"
+                  className="sheet-tab-rename-input"
+                  autoFocus
+                  value={editInput}
+                  onChange={(e) => setEditInput(e.target.value)}
+                  onBlur={() => handleSaveRename(tbl.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveRename(tbl.id);
+                    if (e.key === 'Escape') setEditingTabId(null);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <span
+                  className="sheet-tab-label"
+                  onDoubleClick={(e) => handleStartRename(e, tbl.id, currentLabel)}
+                >
+                  {currentLabel}
+                </span>
+              )}
+
+              <button
                 className="sheet-tab-close-btn"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -67,14 +110,14 @@ export default function SheetTabBar({
 
         {/* Add Tab Button & Menu */}
         <div className="add-sheet-container" ref={addMenuRef}>
-          <button 
-            className="add-sheet-btn" 
+          <button
+            className="add-sheet-btn"
             onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
             title="Tambah Sheet"
           >
             <Plus size={16} />
           </button>
-          
+
           {isAddMenuOpen && (
             <div className="add-sheet-menu">
               <div className="add-sheet-menu-header">Pilih Tabel</div>
@@ -82,17 +125,20 @@ export default function SheetTabBar({
                 <div className="add-sheet-menu-empty">Semua tabel sudah ditampilkan</div>
               ) : (
                 <ul className="add-sheet-menu-list">
-                  {availableToAdd.map(tbl => (
-                    <li 
-                      key={tbl.id} 
-                      onClick={() => {
-                        onAddTab(tbl.id);
-                        setIsAddMenuOpen(false);
-                      }}
-                    >
-                      {tbl.fullLabel || tbl.label}
-                    </li>
-                  ))}
+                  {availableToAdd.map((tbl) => {
+                    const tabTitle = (tabTitles && tabTitles[tbl.id]) || tbl.fullLabel || tbl.label;
+                    return (
+                      <li
+                        key={tbl.id}
+                        onClick={() => {
+                          onAddTab(tbl.id);
+                          setIsAddMenuOpen(false);
+                        }}
+                      >
+                        {tabTitle}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
@@ -113,10 +159,11 @@ export default function SheetTabBar({
         <button
           className="download-btn"
           onClick={onExport}
-          title="Unduh Data ke CSV"
+          title="Unduh Data ke Excel (.xlsx)"
           id="btn-download-data"
+          disabled={isExporting}
         >
-          <span>Unduh Data</span>
+          <span>{isExporting ? 'Mengunduh...' : 'Unduh Data (.xlsx)'}</span>
           <Download size={15} />
         </button>
       </div>

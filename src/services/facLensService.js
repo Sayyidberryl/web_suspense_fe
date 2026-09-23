@@ -1,3 +1,5 @@
+import * as XLSX from 'xlsx';
+
 /**
  * Supabase Direct Service Layer
  * Fetches data directly from Supabase PostgREST API — no backend required.
@@ -18,24 +20,24 @@ export const TABLE_CONFIG = [
   {
     id: 'acceptance',
     tableName: 'FACUL_ETL_MH_AKSEPTASI',
-    label: 'Akseptasi & Underwriting',
-    fullLabel: 'Marine Hull – Akseptasi & Underwriting',
+    label: 'MH - Data Akseptasi',
+    fullLabel: 'MH - Data Akseptasi',
     description: 'Tabel DWH akseptasi polis, slip penutupan, dan portofolio risiko kapal',
     isAiParsed: false,
   },
   {
     id: 'loss_pla',
     tableName: 'FACUL_ETL_MH_LOSS_PLA',
-    label: 'Loss Advice (PLA)',
-    fullLabel: 'Marine Hull – Loss Advice (PLA / Outstanding)',
+    label: 'MH - Data Loss PLA',
+    fullLabel: 'MH - Data Loss PLA',
     description: 'Tabel klaim loss yang masih outstanding / belum diselesaikan',
     isAiParsed: false,
   },
   {
     id: 'loss_sla',
     tableName: 'FACUL_ETL_MH_LOSS_SETTLE',
-    label: 'Settled Claims (SLA)',
-    fullLabel: 'Marine Hull – Settled Claims (SLA)',
+    label: 'MH - Data Loss SLA',
+    fullLabel: 'MH - Data Loss SLA',
     description: 'Tabel klaim loss yang telah diselesaikan (settled)',
     isAiParsed: false,
   },
@@ -287,6 +289,93 @@ export const facLensService = {
       document.body.removeChild(link);
     } catch (err) {
       console.error('Export failed:', err);
+    }
+  },
+
+  /**
+   * Export current data to Excel (.xlsx)
+   * Fetches all filtered rows from Supabase (or uses in-memory data), formats columns, and downloads .xlsx
+   */
+  async exportToExcel({
+    tableId = 'acceptance',
+    title = 'MH - Data Akseptasi',
+    filters = {},
+    inMemoryData = null,
+  } = {}) {
+    const cfg = TABLE_CONFIG.find((t) => t.id === tableId) || TABLE_CONFIG[0];
+    let rowsToExport = [];
+
+    try {
+      if (inMemoryData && inMemoryData.length > 0) {
+        rowsToExport = inMemoryData;
+      } else {
+        const filterQuery = buildFilterParams(tableId, filters);
+        const queryParts = ['select=*', 'limit=5000', 'order=id.asc', filterQuery].filter(Boolean);
+        const url = `${SUPABASE_URL}/rest/v1/${cfg.tableName}?${queryParts.join('&')}`;
+        const res = await fetch(url, { headers: SUPABASE_HEADERS });
+        if (res.ok) {
+          rowsToExport = await res.json();
+        }
+      }
+
+      if (!rowsToExport || rowsToExport.length === 0) {
+        alert('Tidak ada data yang dapat diunduh.');
+        return false;
+      }
+
+      const isAcceptance = tableId === 'acceptance';
+      const keys = Object.keys(rowsToExport[0]).filter(
+        (k) => k !== 'id' && !(isAcceptance && k === 'status')
+      );
+
+      // Clean formatted data with proper business header labels
+      const formattedData = rowsToExport.map((row) => {
+        const rowObj = {};
+        keys.forEach((k) => {
+          const colHeader =
+            COL_LABEL_MAP[k] ||
+            k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+          rowObj[colHeader] =
+            row[k] !== null && row[k] !== undefined ? row[k] : '';
+        });
+        return rowObj;
+      });
+
+      // Build worksheet
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+
+      // Column widths auto-sizing
+      const colWidths = keys.map((k) => {
+        const headerLabel =
+          COL_LABEL_MAP[k] ||
+          k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        const maxDataLen = Math.max(
+          headerLabel.length,
+          ...rowsToExport
+            .slice(0, 50)
+            .map((r) => (r[k] !== null && r[k] !== undefined ? String(r[k]).length : 0))
+        );
+        return { wch: Math.min(Math.max(maxDataLen + 4, 12), 45) };
+      });
+      worksheet['!cols'] = colWidths;
+
+      // Build workbook
+      const workbook = XLSX.utils.book_new();
+      // Excel sheet name max 31 characters, no invalid chars : \ / ? * [ ]
+      const cleanSheetName = (title || cfg.label || 'Data')
+        .replace(/[\\/?*[\]:]/g, '_')
+        .slice(0, 31);
+      XLSX.utils.book_append_sheet(workbook, worksheet, cleanSheetName);
+
+      // Save as .xlsx file
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const filename = `${cleanSheetName}_${dateStr}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+      return true;
+    } catch (err) {
+      console.error('Export to Excel failed:', err);
+      alert('Gagal mengunduh berkas Excel: ' + (err.message || 'Kesalahan jaringan'));
+      return false;
     }
   },
 };

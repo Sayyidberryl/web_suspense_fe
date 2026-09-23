@@ -81,7 +81,7 @@ export default function RecentOutput({ onNavigateToHistory, onSelectDetail }) {
 
               <div className="file-card-footer">
                 <div className="cob-badge-group">
-                  COB: <span className="badge-blue">{file.cob || 'General'}</span>
+                  Kategori: <span className="badge-blue">{file.cob || 'General'}</span>
                 </div>
                 <button 
                   className="detail-link" 

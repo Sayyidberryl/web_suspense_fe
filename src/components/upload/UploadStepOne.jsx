@@ -10,6 +10,7 @@ const UNPARSED_10_COLUMNS = [
 
 export default function UploadStepOne({ onProceedToMapping }) {
   const [selectedFile, setSelectedFile] = useState(null);
+  const [outputTitle, setOutputTitle] = useState('');
   const [cob, setCob] = useState('Marine Hull');
   const [mappingTemplate, setMappingTemplate] = useState('Template Akseptasi (Marine Hull)');
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -25,6 +26,11 @@ export default function UploadStepOne({ onProceedToMapping }) {
     const cols = await mappingService.parseFileHeaders(file);
     const finalCols = cols && cols.length > 0 ? cols : UNPARSED_10_COLUMNS;
     setDetectedColumns(finalCols);
+
+    const baseName = file.name.replace(/\.[^/.]+$/, '');
+    if (!outputTitle || outputTitle.startsWith('MH - Data')) {
+      setOutputTitle(baseName);
+    }
 
     setSelectedFile({
       name: file.name,
@@ -54,8 +60,10 @@ export default function UploadStepOne({ onProceedToMapping }) {
 
   const handleContinue = () => {
     if (!selectedFile || !isConfirmed) return;
+    const resolvedTitle = outputTitle.trim() || selectedFile.name.replace(/\.[^/.]+$/, '');
     onProceedToMapping({
       fileName: selectedFile.name,
+      outputTitle: resolvedTitle,
       fileSize: selectedFile.size,
       cob,
       mappingTemplate,
@@ -74,6 +82,7 @@ export default function UploadStepOne({ onProceedToMapping }) {
       isAiDemo: true
     });
     setDetectedColumns(UNPARSED_10_COLUMNS);
+    setOutputTitle('MH - Data Akseptasi');
     setIsConfirmed(true);
   };
 
@@ -86,6 +95,7 @@ export default function UploadStepOne({ onProceedToMapping }) {
       columnsCount: 179
     });
     setDetectedColumns([]);
+    setOutputTitle('MH - Data Master Ekspor');
     setIsConfirmed(true);
   };
 
@@ -201,13 +211,15 @@ export default function UploadStepOne({ onProceedToMapping }) {
               </div>
               {selectedFile && (
                 <button
+                  type="button"
                   className="btn-clear-selection"
                   onClick={() => {
                     setSelectedFile(null);
+                    setOutputTitle('');
                     setIsConfirmed(false);
                     setDetectedColumns([]);
                   }}
-                  title="Batalkan pilihan"
+                  title="Batalkan pilihan berkas"
                 >
                   <X size={16} />
                 </button>
@@ -215,18 +227,36 @@ export default function UploadStepOne({ onProceedToMapping }) {
             </div>
           </div>
 
-          {/* Card 2: COB & TEMPLATE SELECTION */}
+          {/* Card 2: JUDUL OUTPUT, KATEGORI (COB) & TEMPLATE SELECTION */}
           <div className="info-card">
             <div className="info-card-header">
               <span className="info-card-title">Pengaturan Pemetaan</span>
             </div>
 
+            {/* Field Input Baru: Judul Output */}
             <div className="form-field-group">
-              <label>Class of Business (COB)</label>
+              <label className="form-label">
+                Judul Output <span className="required-star">*</span>
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Contoh: MH - Data Akseptasi"
+                value={outputTitle}
+                onChange={(e) => setOutputTitle(e.target.value)}
+              />
+              <span className="form-helper-text">
+                Nama tabel / sheet tab yang akan tampil di Dashboard dan file ekspor Excel.
+              </span>
+            </div>
+
+            {/* COB adalah Kategori */}
+            <div className="form-field-group">
+              <label className="form-label">Kategori (COB)</label>
               <select
                 value={cob}
                 onChange={(e) => setCob(e.target.value)}
-                className="select-custom-field"
+                className="form-select select-custom-field"
               >
                 <option value="Marine Hull">Marine Hull</option>
                 <option value="Fire & Property">Fire & Property</option>
@@ -236,11 +266,19 @@ export default function UploadStepOne({ onProceedToMapping }) {
             </div>
 
             <div className="form-field-group">
-              <label>Template Pemetaan Awal</label>
+              <label className="form-label">Template Pemetaan Awal</label>
               <select
                 value={mappingTemplate}
-                onChange={(e) => setMappingTemplate(e.target.value)}
-                className="select-custom-field"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setMappingTemplate(val);
+                  if (!outputTitle || outputTitle.startsWith('MH - Data')) {
+                    if (val.includes('Akseptasi')) setOutputTitle('MH - Data Akseptasi');
+                    else if (val.includes('PLA')) setOutputTitle('MH - Data Loss PLA');
+                    else if (val.includes('SLA')) setOutputTitle('MH - Data Loss SLA');
+                  }
+                }}
+                className="form-select select-custom-field"
               >
                 <option value="Template Akseptasi (Marine Hull)">
                   Template Standar Akseptasi (Marine Hull)

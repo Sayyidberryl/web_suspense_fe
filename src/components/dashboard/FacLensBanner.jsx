@@ -92,7 +92,13 @@ export default function FacLensBanner({
   };
 
   const activeTabLabel =
-    activeTab === 'acceptance' ? 'Akseptasi' : activeTab === 'loss_sla' ? 'Loss SLA' : 'Loss PLA';
+    activeTab === 'acceptance'
+      ? 'MH - Data Akseptasi'
+      : activeTab === 'loss_sla'
+      ? 'MH - Data Loss SLA'
+      : activeTab === 'loss_pla'
+      ? 'MH - Data Loss PLA'
+      : 'MH - Data AI';
 
   return (
     <div className="fac-lens-banner">

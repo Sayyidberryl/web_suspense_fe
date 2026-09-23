@@ -10,10 +10,10 @@ export default function TopControlBar({
   tables: propTables = null
 }) {
   const [tables, setTables] = useState([
-    { id: 'acceptance', label: 'Marine Hull - Akseptasi & Underwriting' },
-    { id: 'loss_pla', label: 'Marine Hull - Loss Advice (PLA / Outstanding)' },
-    { id: 'loss_sla', label: 'Marine Hull - Settled Claims (SLA)' },
-    { id: 'ai_parsed', label: 'Marine Hull - Hasil Normalisasi AI (Entitas Granular)', isAiParsed: true }
+    { id: 'acceptance', label: 'MH - Data Akseptasi' },
+    { id: 'loss_pla', label: 'MH - Data Loss PLA' },
+    { id: 'loss_sla', label: 'MH - Data Loss SLA' },
+    { id: 'ai_parsed', label: 'MH - Data Hasil AI', isAiParsed: true }
   ]);
 
   useEffect(() => {

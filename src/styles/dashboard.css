@@ -275,6 +275,70 @@
   flex-shrink: 0;
 }
 
+.sheet-tab-rename-input {
+  background: #ffffff;
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  outline: none;
+  color: #0f172a;
+  min-width: 130px;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.icon-btn:hover {
+  background: #f1f5f9;
+  color: #1e40af;
+  border-color: #94a3b8;
+}
+
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  background: #107c41;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(16, 124, 65, 0.2);
+  transition: all 150ms ease;
+}
+
+.download-btn:hover:not(:disabled) {
+  background: #0d6535;
+  box-shadow: 0 3px 8px rgba(16, 124, 65, 0.35);
+  transform: translateY(-1px);
+}
+
+.download-btn:disabled {
+  background: #94a3b8;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.7;
+}
+
 /* ===================================================================
    Table Pagination Footer
    =================================================================== */

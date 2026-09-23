@@ -45,10 +45,20 @@ export default function App() {
   const [activeTab, setActiveTab] = useState(initialRoute.tab); // 'dashboard' | 'mapping' | 'upload' | 'upload-mapping' | 'history'
   
   // Tab switcher for the DWH tables:
-  // 'acceptance' -> FACUL_ETL_MH_AKSEPTASI (Marine Hull - Akseptasi & Underwriting)
-  // 'loss_pla'   -> FACUL_ETL_MH_LOSS_PLA
-  // 'loss_sla'   -> FACUL_ETL_MH_LOSS_SETTLE
+  // 'acceptance' -> FACUL_ETL_MH_AKSEPTASI (MH - Data Akseptasi)
+  // 'loss_pla'   -> FACUL_ETL_MH_LOSS_PLA (MH - Data Loss PLA)
+  // 'loss_sla'   -> FACUL_ETL_MH_LOSS_SETTLE (MH - Data Loss SLA)
   const [selectedTableTab, setSelectedTableTab] = useState('acceptance');
+
+  // Dynamic titles for sheet tabs (synced with table and file titles)
+  const [tabTitles, setTabTitles] = useState({
+    acceptance: 'MH - Data Akseptasi',
+    loss_pla: 'MH - Data Loss PLA',
+    loss_sla: 'MH - Data Loss SLA',
+    ai_parsed: 'MH - Data Hasil AI'
+  });
+
+  const [isExporting, setIsExporting] = useState(false);
 
   // Dynamic Pagination
   const [pagination, setPagination] = useState({
@@ -83,7 +93,7 @@ export default function App() {
   const [, startTransition] = useTransition();
 
   // Dashboard Dynamic Tabs State
-  const [openTabs, setOpenTabs] = useState(['acceptance']);
+  const [openTabs, setOpenTabs] = useState(['acceptance', 'loss_pla', 'loss_sla']);
 
   const handleAddTab = (tabId) => {
     if (!openTabs.includes(tabId)) {
@@ -104,11 +114,18 @@ export default function App() {
     });
   };
 
-
+  const handleRenameTab = (tabId, newTitle) => {
+    if (!newTitle || !newTitle.trim()) return;
+    setTabTitles((prev) => ({
+      ...prev,
+      [tabId]: newTitle.trim()
+    }));
+  };
 
   // Upload & Mapping Flow State
   const [currentUploadFile, setCurrentUploadFile] = useState({
     fileName: 'Bordero_MarineHull_Batch_Unparsed.xlsx',
+    outputTitle: 'MH - Data Akseptasi',
     fileSize: '14.2 KB',
     cob: 'Marine Hull',
     mappingTemplate: 'Template Akseptasi (Marine Hull)',
@@ -242,8 +259,22 @@ export default function App() {
     }
   };
 
-  const handleExportData = () => {
-    facLensService.exportToCsv(selectedTableTab, `export_${selectedTableTab}_data.csv`, filters);
+  const handleExportData = async () => {
+    const currentTitle =
+      tabTitles[selectedTableTab] ||
+      availableTables.find((t) => t.id === selectedTableTab)?.label ||
+      'MH - Data Akseptasi';
+    setIsExporting(true);
+    try {
+      await facLensService.exportToExcel({
+        tableId: selectedTableTab,
+        title: currentTitle,
+        filters,
+        inMemoryData: tableData
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Upload -> Mapping Navigation
@@ -382,6 +413,9 @@ export default function App() {
                 loadAvailableTables();
               }}
               onExport={handleExportData}
+              tabTitles={tabTitles}
+              onRenameTab={handleRenameTab}
+              isExporting={isExporting}
             />
           )}
 
@@ -392,8 +426,15 @@ export default function App() {
               onBack={() => handleTabChange('dashboard', '/')}
               onCancel={() => handleTabChange('dashboard', '/')}
               onStartParsing={handleStartParsing}
-              onNavigateToDashboard={(tabKey) => {
-                setSelectedTableTab(tabKey || 'ai_parsed');
+              onNavigateToDashboard={(tabKey, title) => {
+                const targetKey = tabKey || 'ai_parsed';
+                const resolvedTitle = title || currentUploadFile.outputTitle || 'MH - Data Hasil AI';
+                setTabTitles((prev) => ({
+                  ...prev,
+                  [targetKey]: resolvedTitle
+                }));
+                handleAddTab(targetKey);
+                setSelectedTableTab(targetKey);
                 loadAvailableTables();
                 handleTabChange('dashboard', '/');
               }}

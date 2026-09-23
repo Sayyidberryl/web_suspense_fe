@@ -31,6 +31,9 @@ export default function DashboardView({
   onLimitChange,
   onRefresh,
   onExport,
+  tabTitles = {},
+  onRenameTab,
+  isExporting = false,
 }) {
   const isAiParsedTab =
     selectedTableTab === 'ai_parsed' || selectedTableTab === 'FACUL_ETL_MH_PARSED_AI';
@@ -47,6 +50,9 @@ export default function DashboardView({
         onCloseTab={onCloseTab}
         onRefresh={onRefresh}
         onExport={onExport}
+        tabTitles={tabTitles}
+        onRenameTab={onRenameTab}
+        isExporting={isExporting}
       />
 
       {openTabs.length === 0 ? (

@@ -40,6 +40,7 @@ export default function ColumnMappingView({
 
   const [currentFileInfo, setCurrentFileInfo] = useState(() => ({
     fileName: fileInfo.fileName || '',
+    outputTitle: fileInfo.outputTitle || '',
     fileSize: fileInfo.fileSize || '',
     cob: fileInfo.cob || 'Marine Hull',
     mappingTemplate: fileInfo.mappingTemplate || 'Template Akseptasi (Marine Hull)'
@@ -279,7 +280,7 @@ export default function ColumnMappingView({
   const handleGoToDashboard = () => {
     setIsPreviewModalOpen(false);
     if (onNavigateToDashboard) {
-      onNavigateToDashboard('ai_parsed');
+      onNavigateToDashboard('ai_parsed', fileInfo.outputTitle || currentFileInfo.outputTitle || 'MH - Data Hasil AI');
     } else if (onBack) {
       onBack();
     }
@@ -406,7 +407,7 @@ export default function ColumnMappingView({
                 fontWeight: 600
               }}>
                 <ShieldCheck size={13} />
-                <span>COB: {fileInfo.cob || 'Marine Hull'}</span>
+                <span>Kategori: {fileInfo.cob || 'Marine Hull'}</span>
               </div>
             </div>
 
@@ -457,8 +458,9 @@ export default function ColumnMappingView({
               <div className="file-badge-left">
                 <span className="xls-icon-box">XLS</span>
                 <div className="file-badge-texts">
-                  <h4>{currentFileInfo.fileName}</h4>
+                  <h4>{fileInfo.outputTitle || currentFileInfo.outputTitle || currentFileInfo.fileName}</h4>
                   <p>
+                    {fileInfo.outputTitle ? `Berkas: ${currentFileInfo.fileName} • ` : ''}
                     {currentFileInfo.fileSize} • {detectedColumns.length} Kolom Sumber Terdeteksi
                   </p>
                 </div>

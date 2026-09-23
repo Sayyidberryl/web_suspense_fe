@@ -101,7 +101,7 @@ export default function HistoryView({ initialFileDetail = null }) {
               setPage(1);
             }}
           >
-            <option value="Semua Tipe COB">Semua Tipe COB</option>
+            <option value="Semua Tipe COB">Semua Kategori (COB)</option>
             <option value="Fire & Property">Fire & Property</option>
             <option value="Marine Cargo">Marine Cargo</option>
             <option value="Engineering">Engineering</option>
@@ -205,7 +205,7 @@ export default function HistoryView({ initialFileDetail = null }) {
 
                 <div className="history-card-footer">
                   <div className="cob-tag-wrapper">
-                    <span>COB:</span>
+                    <span>Kategori:</span>
                     <span className={`badge-cob ${cobClass}`}>{item.cob}</span>
                   </div>
 
@@ -229,7 +229,7 @@ export default function HistoryView({ initialFileDetail = null }) {
               <tr>
                 <th>Nama Berkas</th>
                 <th>Cedant</th>
-                <th>COB</th>
+                <th>Kategori (COB)</th>
                 <th>Ukuran</th>
                 <th>Status</th>
                 <th>Waktu Eksekusi</th>
@@ -366,7 +366,7 @@ export default function HistoryView({ initialFileDetail = null }) {
                 <span>{selectedFile.cedant}</span>
               </div>
               <div className="meta-item">
-                <label>Class of Business (COB)</label>
+                <label>Kategori (COB)</label>
                 <span>{selectedFile.cob}</span>
               </div>
               <div className="meta-item">
