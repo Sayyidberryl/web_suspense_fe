@@ -211,7 +211,7 @@ export default function AiSettingCard({
                 fontSize: '0.72rem',
                 fontWeight: 700
               }}>
-                Gemini 3.8 Flash
+                AI Entity Resolution Engine
               </span>
             </div>
             <p style={{
@@ -529,7 +529,7 @@ export default function AiSettingCard({
               gap: '10px'
             }}>
               <label style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a' }}>
-                3. Instruksi Prompt AI (Gemini 3.8 Flash):
+                3. Instruksi Prompt AI Engine:
               </label>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -679,7 +679,7 @@ export default function AiSettingCard({
           }}>
             <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span>⚡</span>
-              <span>Menjalankan ekstraksi & normalisasi otomatis menggunakan Gemini AI Engine untuk memetakan entitas kapal ke tabel granular DWH.</span>
+              <span>Menjalankan ekstraksi & normalisasi otomatis menggunakan AI Parsing Engine untuk memetakan entitas kapal ke tabel granular DWH.</span>
             </div>
 
             <button
@@ -712,7 +712,7 @@ export default function AiSettingCard({
               ) : (
                 <>
                   <Sparkles size={16} />
-                  <span>Proses AI Parsing (Gemini 3.8 Flash)</span>
+                  <span>Proses AI Parsing Engine</span>
                 </>
               )}
             </button>

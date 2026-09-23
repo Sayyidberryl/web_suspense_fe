@@ -2,10 +2,9 @@ import * as XLSX from 'xlsx';
 import apiClient from './apiClient';
 import mr11ColumnsRaw from './mr11_columns.json';
 
-// Unique list of MR11 raw columns
+// Available source columns - defaults to empty selection until user uploads file or adds columns
 export const AVAILABLE_EXCEL_COLUMNS = [
-  '-- Pilih Kolom Excel --',
-  ...mr11ColumnsRaw.filter(Boolean)
+  '-- Pilih Kolom Excel --'
 ];
 
 // 1. Template Akseptasi (Marine Hull) - 29 Columns (Schema: FACUL_ETL_MH_AKSEPTASI)
@@ -97,7 +96,15 @@ export const MAPPINGS_LOSS_SLA_MH = [
   { no: 24, standard_name: 'Settled or OS', excel_col: 'fac_acc_sts', field_db: 'settled_or_os', data_type: 'TEXT', status: 'mapped', is_optional: false }
 ];
 
-export const DEFAULT_MAPPINGS = MAPPINGS_AKSEPTASI_MH;
+// Clear any pre-mapped source columns so user configures from uploaded file
+const clearSourceColumns = (mappings) =>
+  mappings.map((m) => ({
+    ...m,
+    excel_col: '-- Pilih Kolom Excel --',
+    status: 'unmapped'
+  }));
+
+export const DEFAULT_MAPPINGS = clearSourceColumns(MAPPINGS_AKSEPTASI_MH);
 
 // 3 Default System Templates for Marine Hull
 export const SYSTEM_TEMPLATES = [
@@ -108,7 +115,7 @@ export const SYSTEM_TEMPLATES = [
     target_schema: 'FACUL_ETL_MH_AKSEPTASI',
     column_count: 29,
     description: 'Pemetaan skema akseptasi dan underwriting Marine Hull',
-    mappings: MAPPINGS_AKSEPTASI_MH
+    mappings: clearSourceColumns(MAPPINGS_AKSEPTASI_MH)
   },
   {
     id: 2,
@@ -117,7 +124,7 @@ export const SYSTEM_TEMPLATES = [
     target_schema: 'FACUL_ETL_MH_LOSS_PLA',
     column_count: 24,
     description: 'Pemetaan klaim awal / Preliminary Loss Advice (OS)',
-    mappings: MAPPINGS_LOSS_PLA_MH
+    mappings: clearSourceColumns(MAPPINGS_LOSS_PLA_MH)
   },
   {
     id: 3,
@@ -126,7 +133,7 @@ export const SYSTEM_TEMPLATES = [
     target_schema: 'FACUL_ETL_MH_LOSS_SETTLE',
     column_count: 24,
     description: 'Pemetaan klaim lunas / Settled Loss Advice',
-    mappings: MAPPINGS_LOSS_SLA_MH
+    mappings: clearSourceColumns(MAPPINGS_LOSS_SLA_MH)
   }
 ];
 
@@ -274,7 +281,8 @@ export const mappingService = {
 
   getDefaultMappings(templateName) {
     const template = this.getTemplateByName(templateName);
-    return JSON.parse(JSON.stringify(template.mappings || MAPPINGS_AKSEPTASI_MH));
+    const rows = JSON.parse(JSON.stringify(template.mappings || MAPPINGS_AKSEPTASI_MH));
+    return clearSourceColumns(rows);
   },
 
   getAvailableExcelColumns() {

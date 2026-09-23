@@ -83,7 +83,7 @@ export default function TopControlBar({
             fontWeight: 700
           }}>
             <Sparkles size={13} />
-            <span>Normalisasi Entitas Granular (Gemini 3.8 Flash Engine)</span>
+            <span>Normalisasi Entitas Granular (AI Parsing Engine)</span>
           </span>
         )}
       </div>

@@ -94,7 +94,7 @@ export default function UploadStepOne({ onProceedToMapping }) {
       {/* Dark Top Banner */}
       <div className="upload-banner-dark">
         <h2>Extract, Transform & Load (ETL) dengan AI Parsing</h2>
-        <p>Unggah berkas mentah untuk divalidasi, diekstrak entitasnya menggunakan Gemini 3.8 Flash, dan dimuat ke sistem analitik Indore.</p>
+        <p>Unggah berkas mentah untuk divalidasi, diekstrak entitasnya menggunakan AI Parsing Engine, dan dimuat ke sistem analitik Indore.</p>
       </div>
 
       <div className="upload-grid">

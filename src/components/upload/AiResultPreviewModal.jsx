@@ -16,7 +16,7 @@ export default function AiResultPreviewModal({
   const sourceCount = resultData.sourceCount || rawRows.length || 10;
   const resultCount = resultData.resultCount || explodedRows.length;
   const expansionRatio = resultData.expansionRatio || (resultCount / Math.max(1, sourceCount)).toFixed(1);
-  const usedEngine = resultData.usedEngine || 'Gemini 3.8 Flash API';
+  const usedEngine = resultData.usedEngine || 'Advanced AI Engine';
 
   return (
     <div style={{

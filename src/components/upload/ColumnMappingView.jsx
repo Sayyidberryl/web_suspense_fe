@@ -23,12 +23,7 @@ import AiResultPreviewModal from './AiResultPreviewModal';
 import '../../styles/mapping.css';
 
 export default function ColumnMappingView({
-  fileInfo = {
-    fileName: 'mr11_raw_data_export.xlsx',
-    fileSize: '41.4 MB',
-    cob: 'Marine Hull',
-    mappingTemplate: 'Template Akseptasi (Marine Hull)'
-  },
+  fileInfo = {},
   onBack,
   onCancel,
   onStartParsing,
@@ -43,13 +38,21 @@ export default function ColumnMappingView({
   );
   const [notification, setNotification] = useState('');
 
-  // Source columns detected from file
+  const [currentFileInfo, setCurrentFileInfo] = useState(() => ({
+    fileName: fileInfo.fileName || '',
+    fileSize: fileInfo.fileSize || '',
+    cob: fileInfo.cob || 'Marine Hull',
+    mappingTemplate: fileInfo.mappingTemplate || 'Template Akseptasi (Marine Hull)'
+  }));
+
+  // Source columns detected from file or added manually by user
   const [detectedColumns, setDetectedColumns] = useState(() => {
     if (fileInfo.detectedColumns && fileInfo.detectedColumns.length > 0) {
       return fileInfo.detectedColumns;
     }
-    return AVAILABLE_EXCEL_COLUMNS.filter((c) => c !== '-- Pilih Kolom Excel --');
+    return [];
   });
+  const [customSourceInput, setCustomSourceInput] = useState('');
 
   // AI Engine State
   const [isAiEnabled, setIsAiEnabled] = useState(true); // AI Entity Resolution Engine Active
@@ -57,8 +60,42 @@ export default function ColumnMappingView({
   const [aiParseResult, setAiParseResult] = useState(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
-  // Hidden file inputs for importing template from Excel
+  // Hidden file inputs
   const importExcelInputRef = useRef(null);
+  const sourceFileInputRef = useRef(null);
+
+  const handleAddCustomSourceCol = (e) => {
+    e?.preventDefault();
+    const val = customSourceInput.trim();
+    if (!val) return;
+    if (!detectedColumns.includes(val)) {
+      setDetectedColumns((prev) => [...prev, val]);
+      setNotification(`Kolom sumber "${val}" berhasil ditambahkan.`);
+      setTimeout(() => setNotification(''), 3000);
+    }
+    setCustomSourceInput('');
+  };
+
+  const handleSourceFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      const cols = await mappingService.parseFileHeaders(file);
+      const finalCols = cols && cols.length > 0 ? cols : [];
+      setDetectedColumns(finalCols);
+      setCurrentFileInfo({
+        fileName: file.name,
+        fileSize: `${sizeMb > 0 ? sizeMb : '14.2'} KB`,
+        cob: currentFileInfo.cob,
+        mappingTemplate: currentFileInfo.mappingTemplate
+      });
+      setNotification(`Berkas "${file.name}" berhasil dimuat. ${finalCols.length} kolom terdeteksi.`);
+      setTimeout(() => setNotification(''), 4000);
+    } catch (err) {
+      alert('Gagal membaca berkas: ' + err.message);
+    }
+  };
 
   useEffect(() => {
     async function loadTemplates() {
@@ -251,10 +288,10 @@ export default function ColumnMappingView({
   const mappedCount = mappings.filter((m) => m.excel_col !== '-- Pilih Kolom Excel --').length;
   const optionalCount = mappings.filter((m) => m.is_optional).length;
 
-  // Combine default with detected columns
+  // Available source columns come directly from uploaded file or user additions
   const availableSourceCols = [
     '-- Pilih Kolom Excel --',
-    ...Array.from(new Set([...detectedColumns, ...AVAILABLE_EXCEL_COLUMNS.filter((c) => c !== '-- Pilih Kolom Excel --')]))
+    ...detectedColumns
   ];
 
   return (
@@ -408,24 +445,95 @@ export default function ColumnMappingView({
         <div className="file-input-card">
           <div className="file-input-header">
             <span className="file-input-title">FILE INPUT SUMBER</span>
-            <span className="badge-tag-ready">Siap Dipetakan</span>
+            {currentFileInfo.fileName ? (
+              <span className="badge-tag-ready">Siap Dipetakan</span>
+            ) : (
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Menunggu Berkas</span>
+            )}
           </div>
 
-          <div className="file-badge-pill">
-            <div className="file-badge-left">
-              <span className="xls-icon-box">XLS</span>
-              <div className="file-badge-texts">
-                <h4>{fileInfo.fileName || 'mr11_raw_data_export.xlsx'}</h4>
-                <p>
-                  {fileInfo.fileSize || '41.4 MB'} • {detectedColumns.length} Kolom Sumber Terdeteksi
-                </p>
+          {currentFileInfo.fileName ? (
+            <div className="file-badge-pill">
+              <div className="file-badge-left">
+                <span className="xls-icon-box">XLS</span>
+                <div className="file-badge-texts">
+                  <h4>{currentFileInfo.fileName}</h4>
+                  <p>
+                    {currentFileInfo.fileSize} • {detectedColumns.length} Kolom Sumber Terdeteksi
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="btn-cancel-file"
+                  onClick={() => sourceFileInputRef.current && sourceFileInputRef.current.click()}
+                  title="Ganti Berkas Excel Sumber"
+                >
+                  Ganti File
+                </button>
+                {onCancel && (
+                  <button type="button" className="btn-cancel-file" onClick={onCancel} title="Hapus Berkas Sumber">
+                    Hapus
+                  </button>
+                )}
               </div>
             </div>
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                background: '#f8fafc',
+                border: '1px dashed #cbd5e1',
+                borderRadius: '8px',
+                marginTop: 6
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <FileSpreadsheet size={22} color="#64748b" />
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
+                    Belum Ada Berkas Sumber Dipilih
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    Pilih berkas Excel untuk membaca kolom otomatis atau ketik kolom sumber manual.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => sourceFileInputRef.current && sourceFileInputRef.current.click()}
+                style={{
+                  background: '#0f172a',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '7px 14px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                <Plus size={14} />
+                <span>Pilih Berkas Excel</span>
+              </button>
+            </div>
+          )}
 
-            <button className="btn-cancel-file" onClick={onCancel}>
-              Ganti File
-            </button>
-          </div>
+          <input
+            type="file"
+            ref={sourceFileInputRef}
+            style={{ display: 'none' }}
+            accept=".xlsx,.xls,.csv"
+            onChange={handleSourceFileUpload}
+          />
         </div>
       </div>
 
@@ -435,13 +543,53 @@ export default function ColumnMappingView({
           <div>
             <h3 className="mapping-table-title">Tabel Konfigurasi Pemetaan Kolom</h3>
             <p className="mapping-table-subtitle">
-              Petakan {detectedColumns.length} kolom sumber dari berkas <code>{fileInfo.fileName || 'file_input.xlsx'}</code> ke atribut database target <strong>{targetSchema}</strong> ({mappings.length} baris).
+              {currentFileInfo.fileName
+                ? `Petakan ${detectedColumns.length} kolom sumber dari berkas ${currentFileInfo.fileName} ke atribut database target ${targetSchema} (${mappings.length} baris).`
+                : `Petakan kolom sumber ke atribut database target ${targetSchema} (${mappings.length} baris).`}
             </p>
           </div>
 
-          <div className="mapping-stats-badges">
+          <div className="mapping-stats-badges" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span className="stat-pill mapped">{mappedCount} Terpetakan</span>
-            <span className="stat-pill optional">{optionalCount} Opsional</span>
+
+            {/* Input to add custom source column manually */}
+            <form onSubmit={handleAddCustomSourceCol} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <input
+                type="text"
+                placeholder="+ Tambah kolom sumber..."
+                value={customSourceInput}
+                onChange={(e) => setCustomSourceInput(e.target.value)}
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '0.78rem',
+                  color: '#0f172a',
+                  width: '160px'
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  background: '#0f172a',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+              >
+                <Plus size={13} />
+                <span>Tambah Sumber</span>
+              </button>
+            </form>
+
             <button
               type="button"
               onClick={handleAddRow}

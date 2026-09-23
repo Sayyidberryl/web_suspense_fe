@@ -2,50 +2,44 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SlidersHorizontal, Check, RotateCcw } from 'lucide-react';
 
 // Definitions of all available filterable columns for each table tab
+// Requirements: PLA & SLA: fac code, cedant name, insured loss name, vessel loss name, vessel loss code
+// Acceptance: fac code, cedant name, insured name, vessel name, vessel code
 export const TABLE_COLUMN_DEFINITIONS = {
   loss_pla: [
     { key: 'facCode', label: 'FAC Code', placeholder: 'Cari fac_code...' },
-    { key: 'reffNumber', label: 'Reff Number', placeholder: 'PLA/2023/MH/...' },
-    { key: 'companyName', label: 'Cedant / Direct', placeholder: 'Nama ceding...' },
-    { key: 'broker', label: 'Broker', placeholder: 'Direct / Broker...' },
-    { key: 'insuredLossName', label: 'Tertanggung Loss', placeholder: 'Nama tertanggung loss...' },
-    { key: 'insuredName', label: 'Nama Tertanggung', placeholder: 'Nama tertanggung...' },
-    { key: 'vesselName', label: 'Nama Kapal', placeholder: 'Nama kapal...' },
-    { key: 'vesselCode', label: 'Kode Kapal', placeholder: 'V-XXXX...' },
-    { key: 'lossCause', label: 'Penyebab Klaim', placeholder: 'Machinery / Weather...' },
-    { key: 'dateOfLoss', label: 'Tanggal Klaim', placeholder: 'YYYY-MM-DD...' },
-    { key: 'currency', label: 'Mata Uang', placeholder: 'IDR / USD...' },
-    { key: 'status', label: 'Status Klaim', placeholder: 'Settled / In Review...' }
+    { key: 'companyName', label: 'Cedant Name', placeholder: 'Nama cedant (Direct)...' },
+    { key: 'insuredLossName', label: 'Insured Loss Name', placeholder: 'Nama tertanggung loss...' },
+    { key: 'vesselLossName', label: 'Vessel Loss Name', placeholder: 'Nama kapal loss...' },
+    { key: 'vesselLossCode', label: 'Vessel Loss Code', placeholder: 'Kode kapal loss...' }
   ],
   acceptance: [
     { key: 'facCode', label: 'FAC Code', placeholder: 'Cari fac_code...' },
-    { key: 'reffNumber', label: 'Reff Number', placeholder: 'No. registrasi akseptasi...' },
-    { key: 'companyName', label: 'Cedant / Direct', placeholder: 'Nama ceding...' },
-    { key: 'broker', label: 'Broker', placeholder: 'Direct / Broker...' },
-    { key: 'insuredName', label: 'Nama Tertanggung', placeholder: 'Nama tertanggung...' },
-    { key: 'vesselName', label: 'Nama Kapal', placeholder: 'Nama kapal...' },
-    { key: 'vesselCode', label: 'Kode Kapal', placeholder: 'V-XXXX...' },
-    { key: 'currency', label: 'Mata Uang', placeholder: 'IDR / USD...' },
-    { key: 'status', label: 'Status Akseptasi', placeholder: 'Active / Pending...' }
+    { key: 'companyName', label: 'Cedant Name', placeholder: 'Nama cedant (Direct)...' },
+    { key: 'insuredName', label: 'Insured Name', placeholder: 'Nama tertanggung...' },
+    { key: 'vesselName', label: 'Vessel Name', placeholder: 'Nama kapal...' },
+    { key: 'vesselCode', label: 'Vessel Code', placeholder: 'Kode kapal...' }
   ],
   loss_sla: [
     { key: 'facCode', label: 'FAC Code', placeholder: 'Cari fac_code...' },
-    { key: 'reffNumber', label: 'Reff Number', placeholder: 'SLA/2023/MH/...' },
-    { key: 'companyName', label: 'Cedant / Direct', placeholder: 'Nama ceding...' },
-    { key: 'broker', label: 'Broker', placeholder: 'Direct / Broker...' },
-    { key: 'insuredName', label: 'Nama Tertanggung', placeholder: 'Nama tertanggung...' },
+    { key: 'companyName', label: 'Cedant Name', placeholder: 'Nama cedant (Direct)...' },
+    { key: 'insuredLossName', label: 'Insured Loss Name', placeholder: 'Nama tertanggung loss...' },
+    { key: 'vesselLossName', label: 'Vessel Loss Name', placeholder: 'Nama kapal loss...' },
+    { key: 'vesselLossCode', label: 'Vessel Loss Code', placeholder: 'Kode kapal loss...' }
+  ],
+  ai_parsed: [
+    { key: 'facCode', label: 'FAC Code', placeholder: 'Cari fac_code...' },
     { key: 'vesselName', label: 'Nama Kapal', placeholder: 'Nama kapal...' },
-    { key: 'vesselCode', label: 'Kode Kapal', placeholder: 'V-XXXX...' },
-    { key: 'dateOfLoss', label: 'Tanggal Settlement', placeholder: 'YYYY-MM-DD...' },
-    { key: 'currency', label: 'Mata Uang', placeholder: 'IDR / USD...' },
-    { key: 'status', label: 'Status Settle', placeholder: 'Settled...' }
+    { key: 'vesselCode', label: 'Kode Kapal', placeholder: 'Kode kapal...' },
+    { key: 'typeOfVessel', label: 'Type of Vessel', placeholder: 'Tipe kapal...' },
+    { key: 'classification', label: 'Classification', placeholder: 'Klasifikasi...' }
   ]
 };
 
 const DEFAULT_COLUMNS = {
-  loss_pla: ['facCode', 'companyName', 'insuredLossName', 'vesselName', 'lossCause'],
-  acceptance: ['facCode', 'reffNumber', 'companyName', 'insuredName', 'vesselName'],
-  loss_sla: ['facCode', 'reffNumber', 'companyName', 'vesselName', 'status']
+  loss_pla: ['facCode', 'companyName', 'insuredLossName', 'vesselLossName', 'vesselLossCode'],
+  acceptance: ['facCode', 'companyName', 'insuredName', 'vesselName', 'vesselCode'],
+  loss_sla: ['facCode', 'companyName', 'insuredLossName', 'vesselLossName', 'vesselLossCode'],
+  ai_parsed: ['facCode', 'vesselName', 'vesselCode', 'typeOfVessel', 'classification']
 };
 
 export default function FacLensBanner({
@@ -62,16 +56,10 @@ export default function FacLensBanner({
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Sync visible columns when tab changes
+  // Sync visible columns when tab changes — load exact columns for active tab
   useEffect(() => {
-    const validKeys = new Set(availableColumns.map((c) => c.key));
-    setVisibleColumns((prev) => {
-      const filtered = prev.filter((k) => validKeys.has(k));
-      if (filtered.length === 0) {
-        return DEFAULT_COLUMNS[activeTab] || availableColumns.slice(0, 5).map((c) => c.key);
-      }
-      return filtered;
-    });
+    const cols = DEFAULT_COLUMNS[activeTab] || availableColumns.map((c) => c.key);
+    setVisibleColumns(cols);
   }, [activeTab]);
 
   // Close popup on outside click
@@ -149,7 +137,8 @@ export default function FacLensBanner({
         })}
       </div>
 
-      {/* Setting Filter Button — below the filter grid */}
+      {/* Setting Filter section commented out per request */}
+      {/*
       <div className="banner-footer-actions" ref={dropdownRef}>
         <button
           type="button"
@@ -162,7 +151,6 @@ export default function FacLensBanner({
           <span className="badge-count">{visibleColumns.length} kolom</span>
         </button>
 
-        {/* Popup — opens upward from the button */}
         {isCustomizeOpen && (
           <div className="customize-columns-popover popover-above">
             <div className="popover-header">
@@ -204,6 +192,7 @@ export default function FacLensBanner({
           </div>
         )}
       </div>
+      */}
     </div>
   );
 }
