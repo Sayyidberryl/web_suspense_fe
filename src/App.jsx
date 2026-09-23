@@ -6,7 +6,7 @@ import UploadStepOne from './components/upload/UploadStepOne';
 import ColumnMappingView from './components/upload/ColumnMappingView';
 import AiProcessingModal from './components/upload/AiProcessingModal';
 import HistoryView from './components/history/HistoryView';
-import facLensService from './services/facLensService';
+import facLensService, { TABLE_CONFIG } from './services/facLensService';
 
 
 import './styles/index.css';
@@ -87,7 +87,7 @@ export default function App() {
 
   const [tableData, setTableData] = useState([]);
   const [tableColumns, setTableColumns] = useState([]);
-  const [availableTables, setAvailableTables] = useState([]);
+  const [availableTables, setAvailableTables] = useState(TABLE_CONFIG);
   const [loading, setLoading] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
   const [, startTransition] = useTransition();
