@@ -148,7 +148,7 @@ function buildFilterParams(tableId, filters = {}) {
     addIlike('nama_tertanggung_loss', filters.insuredLossName);
     addIlike('nama_kapal', filters.vesselLossName);
     addIlike('code_kapal', filters.vesselLossCode);
-    addIlike('status', filters.status);
+    addIlike('settled_or_os', filters.status);
     if (filters.globalSearch && filters.globalSearch.trim()) {
       addIlike('fac_code', filters.globalSearch);
     }
