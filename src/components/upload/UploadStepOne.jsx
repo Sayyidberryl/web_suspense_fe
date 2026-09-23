@@ -160,26 +160,7 @@ export default function UploadStepOne({ onProceedToMapping }) {
                 <span>📥 Muat Data Mentah Marine Hull</span>
               </button>
 
-              <button
-                type="button"
-                onClick={loadMasterExportFile}
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #cbd5e1',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontSize: '0.78rem',
-                  color: '#475569',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>📊 Master Ekspor Fakultatif (MR11_Facultative_Export.xlsx - 179 Kolom)</span>
-              </button>
+
             </div>
           )}
         </div>
