@@ -157,7 +157,7 @@ export default function UploadStepOne({ onProceedToMapping }) {
                 }}
               >
                 <Sparkles size={16} />
-                <span>📥 Muat Batch Bordero Mentah (Bordero_MarineHull_Batch_Unparsed.xlsx)</span>
+                <span>📥 Muat Data Mentah Marine Hull</span>
               </button>
 
               <button
@@ -315,7 +315,7 @@ export default function UploadStepOne({ onProceedToMapping }) {
             disabled={!selectedFile || !isConfirmed}
             onClick={handleContinue}
           >
-            <span>Lanjutkan ke Pemetaan Kolom & AI</span>
+            <span>Lanjutkan ke Pemetaan Kolom</span>
             <ArrowRight size={18} />
           </button>
         </div>

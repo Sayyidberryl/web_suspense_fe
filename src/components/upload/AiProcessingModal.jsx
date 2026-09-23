@@ -16,7 +16,7 @@ export default function AiProcessingModal({
   onComplete
 }) {
   const [progress, setProgress] = useState(74);
-  const [currentStep, setCurrentStep] = useState(3); // 1: Ekstraksi, 2: Mapping, 3: Parsing AI, 4: Simpan DB, 5: Done
+  const [currentStep, setCurrentStep] = useState(3); // 1: Periksa File, 2: Kolum Input, 3: Parsing Engine, 4: Bangun Output, 5: Selesai
   const [remainingSeconds, setRemainingSeconds] = useState(8);
   const [processedRows, setProcessedRows] = useState(35705);
   const totalRows = 48250;
@@ -40,9 +40,9 @@ export default function AiProcessingModal({
             cob: fileInfo.cob || 'Fire & Property',
             status: 'Berhasil Dimuat',
             records_count: totalRows,
-            schema_accuracy: 99.8,
+            schema_accuracy: 100.0,
             duration_seconds: 8.2,
-            log_message: 'Pemrosesan AI & Validasi skema selesai 100%. Data berhasil dimuat ke ipr_stage_db.'
+            log_message: 'Pemrosesan Parsing Engine & Validasi selesai 100%. Data berhasil dibangun.'
           });
           return 100;
         }
@@ -78,7 +78,7 @@ export default function AiProcessingModal({
         {/* Top Badge */}
         <div className="ai-top-badge">
           <Lightbulb size={14} />
-          <span>Pemrosesan AI & Validasi Berjalan</span>
+          <span>Pemrosesan Parsing Engine Berjalan</span>
         </div>
 
         {/* Circular Progress Gauge */}
@@ -109,24 +109,24 @@ export default function AiProcessingModal({
           <div className="circle-inner-content">
             <span className="percent-text">{progress}%</span>
             <span className="status-sub-indicator">
-              {isDone ? 'Validasi Selesai' : 'AI Menganalisis'}
+              {isDone ? 'Pemrosesan Selesai' : 'Sedang Memproses'}
             </span>
           </div>
         </div>
 
         {/* Title and Subtitle */}
         <h2 className="ai-modal-title">
-          {isDone ? 'Data Berhasil Diproses!' : 'Sedang Memproses Data dengan AI'}
+          {isDone ? 'Data Berhasil Diproses!' : 'Sedang Memproses Data'}
         </h2>
         <p className="ai-modal-desc">
           {isDone
-            ? 'Struktur kolom dan normalisasi tipe data telah cocok 100% dengan skema database IPR.'
-            : 'Sistem sedang memvalidasi struktur kolom, normalisasi tipe data, dan mencocokkan skema dari berkas'}
+            ? 'Struktur dan output data telah berhasil dibangun oleh Parsing Engine.'
+            : 'Sistem sedang membaca file, mencocokkan input, dan memproses data melalui Parsing Engine.'}
         </p>
 
         {/* File pill */}
         <div className="ai-filename-pill">
-          {fileInfo.fileName || 'Bordero_TriPakarta_Fire_Q3_2026.xlsx'}
+          {fileInfo.fileName || 'Data_Mentah_MarineHull.xlsx'}
         </div>
 
         {/* Horizontal Linear Progress Bar */}
@@ -153,48 +153,60 @@ export default function AiProcessingModal({
           </div>
           <div className="ai-stat-card">
             <span className="ai-stat-label">Akurasi Skema</span>
-            <span className="ai-stat-val highlight-green">99.8%</span>
+            <span className="ai-stat-val highlight-green">100.0%</span>
           </div>
         </div>
 
-        {/* Stepper (4 steps) */}
+        {/* Stepper (5 steps) */}
         <div className="ai-stepper">
-          {/* Step 1: Ekstraksi */}
+          {/* Step 1: Memeriksa file */}
           <div className="step-item completed">
             <Check size={14} className="step-icon-check" />
-            <span>Ekstraksi</span>
+            <span>Memeriksa File</span>
           </div>
 
           <div className="step-divider-line done" />
 
-          {/* Step 2: Mapping Kolom */}
+          {/* Step 2: Memeriksa kolum input */}
           <div className="step-item completed">
             <Check size={14} className="step-icon-check" />
-            <span>Mapping Kolom</span>
+            <span>Memeriksa Kolum</span>
           </div>
 
           <div className="step-divider-line done" />
 
-          {/* Step 3: Parsing oleh AI */}
+          {/* Step 3: Parsing Engine */}
           <div className={`step-item ${currentStep === 3 ? 'active' : currentStep > 3 ? 'completed' : ''}`}>
             {currentStep > 3 ? (
               <Check size={14} className="step-icon-check" />
             ) : (
               <div className="step-number-circle">3</div>
             )}
-            <span>Parsing oleh AI</span>
+            <span>Parsing Engine</span>
           </div>
 
           <div className={`step-divider-line ${currentStep >= 4 ? 'done' : ''}`} />
 
-          {/* Step 4: Simpan DB */}
-          <div className={`step-item ${currentStep === 4 ? 'active' : currentStep === 5 ? 'completed' : ''}`}>
-            {currentStep === 5 ? (
+          {/* Step 4: Membangun output */}
+          <div className={`step-item ${currentStep === 4 ? 'active' : currentStep > 4 ? 'completed' : ''}`}>
+            {currentStep > 4 ? (
               <Check size={14} className="step-icon-check" />
             ) : (
               <div className="step-number-circle">4</div>
             )}
-            <span>Simpan DB</span>
+            <span>Membangun Output</span>
+          </div>
+
+          <div className={`step-divider-line ${currentStep >= 5 ? 'done' : ''}`} />
+
+          {/* Step 5: Selesai */}
+          <div className={`step-item ${currentStep === 5 ? 'completed' : ''}`}>
+            {currentStep === 5 ? (
+              <Check size={14} className="step-icon-check" />
+            ) : (
+              <div className="step-number-circle">5</div>
+            )}
+            <span>Selesai</span>
           </div>
         </div>
 
@@ -234,7 +246,7 @@ export default function AiProcessingModal({
         {/* Footer Subtext */}
         <div className="ai-modal-footer-text">
           <Clock size={13} />
-          <span>Pemrosesan otomatis menggunakan model machine learning.</span>
+          <span>Pemrosesan otomatis menggunakan Parsing Engine terpusat.</span>
         </div>
       </div>
     </div>

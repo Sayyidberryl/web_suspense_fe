@@ -124,7 +124,7 @@ export default function App() {
 
   // Upload & Mapping Flow State
   const [currentUploadFile, setCurrentUploadFile] = useState({
-    fileName: 'Bordero_MarineHull_Batch_Unparsed.xlsx',
+    fileName: 'Data_Mentah_MarineHull.xlsx',
     outputTitle: 'MH - Data Akseptasi',
     fileSize: '14.2 KB',
     cob: 'Marine Hull',
@@ -365,7 +365,7 @@ export default function App() {
                 boxShadow: '0 0 6px #10b981'
               }} />
               <span>
-                <strong>Pemrosesan Latar Belakang:</strong> Sedang memvalidasi skema berkas <em>{backgroundProcessing.fileName}</em> (Model AI aktif)
+                <strong>Pemrosesan Latar Belakang:</strong> Sedang memvalidasi skema berkas <em>{backgroundProcessing.fileName}</em> (Parsing Engine aktif)
               </span>
             </div>
             <button
@@ -457,14 +457,14 @@ export default function App() {
         </main>
       </div>
 
-      {/* AI Processing Modal */}
+      {/* Processing Modal */}
       <AiProcessingModal
         isOpen={isAiModalOpen}
         fileInfo={{
-          fileName: currentUploadFile.fileName || 'Bordero_TriPakarta_Fire_Q3_2026.xlsx',
+          fileName: currentUploadFile.fileName || 'Data_Mentah_MarineHull.xlsx',
           fileSize: currentUploadFile.fileSize || '14.8 MB',
-          cob: currentUploadFile.cob || 'Fire & Property',
-          cedant: 'PT Asuransi Tri Pakarta'
+          cob: currentUploadFile.cob || 'Marine Hull',
+          cedant: 'PT Asuransi'
         }}
         onClose={() => setIsAiModalOpen(false)}
         onRunInBackground={handleRunInBackground}

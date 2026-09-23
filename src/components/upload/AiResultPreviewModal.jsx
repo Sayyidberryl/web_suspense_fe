@@ -16,7 +16,7 @@ export default function AiResultPreviewModal({
   const sourceCount = resultData.sourceCount || rawRows.length || 10;
   const resultCount = resultData.resultCount || explodedRows.length;
   const expansionRatio = resultData.expansionRatio || (resultCount / Math.max(1, sourceCount)).toFixed(1);
-  const usedEngine = resultData.usedEngine || 'Advanced AI Engine';
+  const usedEngine = resultData.usedEngine || 'Parsing Engine';
 
   return (
     <div style={{
@@ -70,7 +70,7 @@ export default function AiResultPreviewModal({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
-                  Hasil AI Parsing & Multi-Vessel Exploding
+                  Hasil Parsing Engine
                 </h3>
                 <span style={{
                   background: 'rgba(52, 211, 153, 0.2)',
@@ -184,7 +184,7 @@ export default function AiResultPreviewModal({
               color: activeTab === 'before' ? '#4f46e5' : '#64748b'
             }}
           >
-            📋 Data Mentah Sebelum AI ({sourceCount} Baris)
+            📋 Data Mentah Sebelum Parsing ({sourceCount} Baris)
           </button>
         </div>
 
@@ -309,7 +309,7 @@ export default function AiResultPreviewModal({
           flexShrink: 0
         }}>
           <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-            Data telah disimpan otomatis ke tabel DWH: <code>FACUL_ETL_MH_PARSED_AI</code>
+            Data telah disimpan otomatis ke tabel DWH: <code>{resultData.targetTable || 'OUTPUT_TABLE'}</code>
           </span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

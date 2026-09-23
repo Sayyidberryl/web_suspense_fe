@@ -55,8 +55,8 @@ export default function ColumnMappingView({
   });
   const [customSourceInput, setCustomSourceInput] = useState('');
 
-  // AI Engine State
-  const [isAiEnabled, setIsAiEnabled] = useState(true); // AI Entity Resolution Engine Active
+  // Parsing Engine State
+  const [isAiEnabled, setIsAiEnabled] = useState(true); // Parsing Engine Active
   const [isProcessingAi, setIsProcessingAi] = useState(false);
   const [aiParseResult, setAiParseResult] = useState(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -247,7 +247,7 @@ export default function ColumnMappingView({
     setTimeout(() => setNotification(''), 3500);
   };
 
-  // AI Parsing Process Trigger
+  // Parsing Engine Process Trigger
   const handleProcessAiParsing = async (aiConfig) => {
     setIsProcessingAi(true);
     try {
@@ -260,18 +260,19 @@ export default function ColumnMappingView({
         prompt_template: aiConfig.promptTemplate,
         target_columns: aiConfig.targetColumns,
         source_mapping: aiConfig.sourceMapping,
-        file_name: fileInfo.fileName || 'Bordero_MarineHull_Batch_Unparsed.xlsx',
+        file_name: fileInfo.fileName || 'Data_Mentah_MarineHull.xlsx',
         file_size: fileInfo.fileSize || '14.2 KB',
         cob: fileInfo.cob || 'Marine Hull',
         save_to_dwh: true,
-        target_table: 'FACUL_ETL_MH_PARSED_AI'
+        target_table: targetSchema,
+        output_title: currentFileInfo.outputTitle || 'Output_Simulasi'
       };
 
       const result = await facLensService.runAiParse(payload);
       setAiParseResult(result);
       setIsPreviewModalOpen(true);
     } catch (err) {
-      alert('Gagal menjalankan proses AI Parsing: ' + err.message);
+      alert('Gagal menjalankan proses Parsing Engine: ' + err.message);
     } finally {
       setIsProcessingAi(false);
     }
@@ -280,7 +281,8 @@ export default function ColumnMappingView({
   const handleGoToDashboard = () => {
     setIsPreviewModalOpen(false);
     if (onNavigateToDashboard) {
-      onNavigateToDashboard('ai_parsed', fileInfo.outputTitle || currentFileInfo.outputTitle || 'MH - Data Hasil AI');
+      const generatedTableId = aiParseResult?.targetTable || 'FACUL_ETL_MH_AKSEPTASI';
+      onNavigateToDashboard(generatedTableId, fileInfo.outputTitle || currentFileInfo.outputTitle || 'Hasil Simulasi ETL');
     } else if (onBack) {
       onBack();
     }
@@ -754,18 +756,18 @@ export default function ColumnMappingView({
               className="btn-primary-parse"
               onClick={() => {
                 if (isAiEnabled) {
-                  // Direct run AI parsing with current settings
+                  // Direct run parsing engine with current settings
                   handleProcessAiParsing({
                     targetColumns: ['Nama Kapal', 'Type of Vessel', 'Code Kapal', 'Size of Vessel', 'Year of Built', 'Type of Material', 'Classification'],
                     sourceMapping: { 'Type of Vessel': 'fac_risk + fac_desc' },
-                    promptTemplate: 'Ekstrak entitas kapal multi-vessel exploding.'
+                    promptTemplate: 'Proses simulasi.'
                   });
                 } else {
                   onStartParsing({ fileInfo, mappings, templateName: selectedTemplateName, targetSchema });
                 }
               }}
             >
-              <span>{isAiEnabled ? '⚡ Proses AI Parsing' : 'Simpan & Lanjutkan ETL'}</span>
+              <span>{isAiEnabled ? '⚡ Proses Parsing Engine' : 'Simpan & Lanjutkan ETL'}</span>
               <ArrowRight size={16} />
             </button>
           </div>
