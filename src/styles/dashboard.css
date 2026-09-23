@@ -626,17 +626,18 @@
 }
 
 .banner-title {
-  font-size: 1.15rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: #1e3a8a;
-  margin-bottom: 2px;
-  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
 }
 
 .banner-subtitle {
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   color: #2563eb;
   font-weight: 500;
+  line-height: 1.4;
 }
 
 .banner-actions {

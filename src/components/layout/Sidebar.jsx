@@ -13,8 +13,8 @@ export default function Sidebar({ activeTab, onTabChange }) {
             className="brand-logo-img"
           />
           <div className="brand-title-group">
-            <span className="brand-title">IndonesiaRe</span>
-            <span className="brand-subtitle">Facultative Data Intelligence</span>
+            <span className="brand-title">FAC LENS</span>
+            <span className="brand-subtitle">Facultative Intelligence Platform</span>
           </div>
         </div>
       </div>
