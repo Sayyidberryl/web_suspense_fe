@@ -23,6 +23,9 @@ export default function DashboardView({
   onRemoveFilter,
   selectedTableTab = 'acceptance',
   onSelectTableTab,
+  openTabs = [],
+  onAddTab,
+  onCloseTab,
   pagination,
   onPageChange,
   onLimitChange,
@@ -39,6 +42,9 @@ export default function DashboardView({
         tables={tables}
         selectedTab={selectedTableTab}
         onSelectTab={onSelectTableTab}
+        openTabs={openTabs}
+        onAddTab={onAddTab}
+        onCloseTab={onCloseTab}
         onRefresh={onRefresh}
         onExport={onExport}
       />

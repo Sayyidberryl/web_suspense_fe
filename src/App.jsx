@@ -82,6 +82,30 @@ export default function App() {
   const [connectionError, setConnectionError] = useState(null);
   const [, startTransition] = useTransition();
 
+  // Dashboard Dynamic Tabs State
+  const [openTabs, setOpenTabs] = useState(['acceptance']);
+
+  const handleAddTab = (tabId) => {
+    if (!openTabs.includes(tabId)) {
+      setOpenTabs((prev) => [...prev, tabId]);
+    }
+    setSelectedTableTab(tabId);
+  };
+
+  const handleCloseTab = (tabId) => {
+    setOpenTabs((prev) => {
+      const newTabs = prev.filter((id) => id !== tabId);
+      if (tabId === selectedTableTab && newTabs.length > 0) {
+        setSelectedTableTab(newTabs[newTabs.length - 1]);
+      } else if (newTabs.length === 0) {
+        setSelectedTableTab(null);
+      }
+      return newTabs;
+    });
+  };
+
+
+
   // Upload & Mapping Flow State
   const [currentUploadFile, setCurrentUploadFile] = useState({
     fileName: 'Bordero_MarineHull_Batch_Unparsed.xlsx',
@@ -347,6 +371,9 @@ export default function App() {
               onSelectTableTab={(newTab) => {
                 handleSelectTableTab(newTab);
               }}
+              openTabs={openTabs}
+              onAddTab={handleAddTab}
+              onCloseTab={handleCloseTab}
               pagination={pagination}
               onPageChange={handlePageChange}
               onLimitChange={handleLimitChange}
