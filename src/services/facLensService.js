@@ -132,7 +132,9 @@ function buildFilterParams(tableId, filters = {}) {
     parts.push(`date_of_loss=eq.${encodeURIComponent(filters.dateOfLoss.trim())}`);
   }
 
-  if (tableId === 'acceptance') {
+  const isAcceptance = tableId === 'acceptance' || tableId.startsWith('etl_out_'); // Fallback to acceptance if dynamic table
+  
+  if (isAcceptance) {
     addIlike('direct', filters.companyName);
     addIlike('nama_tertanggung', filters.insuredName);
     addIlike('nama_kapal', filters.vesselName);
