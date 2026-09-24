@@ -251,12 +251,8 @@ export default function ColumnMappingView({
   const handleProcessAiParsing = async (aiConfig) => {
     setIsProcessingAi(true);
     try {
-      // Fetch 10 demo unparsed rows if demo is active
-      const demoRes = await facLensService.getDemoUnparsedData();
-      const rawRows = demoRes?.data || [];
-
       const payload = {
-        rows: rawRows,
+        rows: [], // Send empty to force backend to use DEMO_RAW_10_ROWS (10 rows)
         prompt_template: aiConfig.promptTemplate,
         target_columns: aiConfig.targetColumns,
         source_mapping: aiConfig.sourceMapping,
@@ -299,6 +295,39 @@ export default function ColumnMappingView({
 
   return (
     <div className="mapping-container">
+      {/* Full-screen Loading Overlay for Parsing Engine */}
+      {isProcessingAi && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            width: '50px',
+            height: '50px',
+            border: '4px solid #f3f4f6',
+            borderTop: '4px solid #2563eb',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            marginBottom: '20px'
+          }} />
+          <h2 style={{ color: '#1e3a8a', fontWeight: 700, margin: 0, fontSize: '1.2rem' }}>Parsing Engine Sedang Berjalan...</h2>
+          <p style={{ color: '#64748b', marginTop: '8px', fontSize: '0.9rem' }}>Mengekstrak dan memproses entitas majemuk menggunakan AI. Mohon tunggu beberapa detik.</p>
+          <style>{`
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          `}</style>
+        </div>
+      )}
+
       {/* Hidden File Input for Excel Template Import */}
       <input
         type="file"
