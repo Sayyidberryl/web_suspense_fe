@@ -301,7 +301,7 @@ export const mappingService = {
         match = 'fac_code';
         break;
       case 'reff_number':
-        match = 'fac_old_ref';
+        match = '-- Pilih Kolom Excel --';
         break;
       case 'direct':
         match = 'fac_cedant';
@@ -313,7 +313,7 @@ export const mappingService = {
         match = 'fac_insured';
         break;
       case 'afiliasi_tertanggung':
-        match = 'fac_insured_code';
+        match = 'fac_insured';
         break;
       case 'nama_tertanngung_loss':
         match = 'fac_insured';
@@ -331,37 +331,37 @@ export const mappingService = {
         match = 'fac_acc_sts';
         break;
       case 'nama_kapal':
-        match = 'fac_vessel';
+        match = 'fac_desc';
         break;
       case 'type_of_vessel':
-        match = 'fac_c_hull';
+        match = 'fac_risk + fac_desc';
         break;
       case 'code_kapal':
-        match = 'fac_coycode';
+        match = 'fac_desc';
         break;
       case 'size_of_vessel':
-        match = 'fac_tonage';
+        match = 'fac_desc';
         break;
       case 'year_of_built':
-        match = 'fac_old';
+        match = 'fac_desc';
         break;
       case 'type_of_material':
-        match = 'fac_constr';
+        match = 'fac_desc';
         break;
       case 'classification':
-        match = 'fac_classifi';
+        match = 'fac_desc';
         break;
       case 'flag':
-        match = 'fac_sterr';
+        match = '-- Pilih Kolom Excel --';
         break;
       case 'last_docking_date':
-        match = 'fac_doc_date';
+        match = '-- Pilih Kolom Excel --';
         break;
       case 'jenis_muatan':
-        match = 'fac_cargo';
+        match = '-- Pilih Kolom Excel --';
         break;
       case 'trading_area':
-        match = 'fac_territory';
+        match = '-- Pilih Kolom Excel --';
         break;
       case 'currency':
         match = 'fac_currency';
@@ -373,19 +373,19 @@ export const mappingService = {
         match = 'fac_prem_rate';
         break;
       case 'premium_amount':
-        match = 'fac_gpremium';
+        match = '-- Pilih Kolom Excel --';
         break;
       case 'ric':
-        match = 'fac_mra_code';
+        match = '-- Pilih Kolom Excel --';
         break;
       case 'riu_share':
-        match = 'fac_wrt_shr';
+        match = 'fac_snd_shr';
         break;
       case 'riu_gross_premium':
         match = 'fac_gpremium';
         break;
       case 'riu_net_premium':
-        match = 'fac_npremium';
+        match = '-- Pilih Kolom Excel --';
         break;
       case 'date_of_loss':
         match = 'fac_doc_date';
