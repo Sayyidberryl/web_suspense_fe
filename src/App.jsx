@@ -300,6 +300,8 @@ export default function App() {
     setTimeout(() => {
       setBackgroundProcessing(null);
     }, 8000);
+  };
+
   const handleStartParsing = (mappingData, skipNavigation = false) => {
     // Execute the ETL lookup, returning the promise
     return handleAiComplete(mappingData, skipNavigation);
