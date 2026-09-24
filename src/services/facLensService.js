@@ -41,6 +41,14 @@ export const TABLE_CONFIG = [
     description: 'Tabel klaim loss yang telah diselesaikan (settled)',
     isAiParsed: false,
   },
+  {
+    id: 'hasil_testing',
+    tableName: 'etl_out_testing_mh_1',
+    label: 'Hasil Testing MH',
+    fullLabel: 'Hasil Testing MH',
+    description: 'Tabel hasil proses file testing_mh.xlsx (Berbeda dari Akseptasi)',
+    isAiParsed: true,
+  }
 ];
 
 /** Map column key → human-readable label */

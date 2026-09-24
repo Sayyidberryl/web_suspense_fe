@@ -94,7 +94,7 @@ export default function App() {
   const [, startTransition] = useTransition();
 
   // Dashboard Dynamic Tabs State
-  const [openTabs, setOpenTabs] = useState(['acceptance', 'loss_pla', 'loss_sla']);
+  const [openTabs, setOpenTabs] = useState(['acceptance', 'loss_pla', 'loss_sla', 'hasil_testing']);
 
   const handleAddTab = (tabId) => {
     if (!openTabs.includes(tabId)) {
