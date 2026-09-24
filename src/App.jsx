@@ -284,11 +284,7 @@ export default function App() {
     handleTabChange('upload-mapping', '/mapping');
   };
 
-  // Mapping -> Start ETL Processing (dipanggil dari ColumnMappingView)
-  const handleStartParsing = (mappingData) => {
-    // Bypass the gimmick AI modal and directly execute the ETL lookup
-    handleAiComplete(mappingData);
-  };
+
 
   // AI Background processing trigger
   const handleRunInBackground = (fileInfo) => {
