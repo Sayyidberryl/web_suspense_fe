@@ -164,8 +164,32 @@ export const facLensService = {
    * Get list of available DWH tables with live row counts
    */
   async getTables() {
+    let dynamicTables = [];
+    try {
+      const genRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/generated_tables?select=*&order=created_at.desc`,
+        { headers: SUPABASE_HEADERS }
+      );
+      if (genRes.ok) {
+        const genData = await genRes.json();
+        dynamicTables = genData.map(g => ({
+          id: g.table_name,
+          tableName: g.table_name,
+          label: g.label || g.table_name,
+          fullLabel: g.label || g.table_name,
+          description: g.description,
+          isAiParsed: false,
+          source_table: g.source_table
+        }));
+      }
+    } catch (err) {
+      console.warn('Could not fetch generated_tables', err);
+    }
+
+    const allConfigs = [...TABLE_CONFIG, ...dynamicTables];
+
     const results = await Promise.all(
-      TABLE_CONFIG.map(async (cfg) => {
+      allConfigs.map(async (cfg) => {
         try {
           const res = await fetch(
             `${SUPABASE_URL}/rest/v1/${cfg.tableName}?select=id&limit=1`,
