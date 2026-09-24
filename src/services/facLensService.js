@@ -378,6 +378,38 @@ export const facLensService = {
       return false;
     }
   },
+
+  /**
+   * Mock functions for Parsing Engine Demo
+   */
+  async getAiPromptTemplates() {
+    return [
+      {
+        id: '1',
+        name: 'Ekstraksi & Explode Entitas Kapal Marine Hull (Multi-Vessel to Rows)',
+        prompt_text: 'Anda adalah Senior Data Warehouse Engineer & Marine Insurance Specialist. Ekstrak entitas kapal individual dari deskripsi mentah. Jika 1 baris mengandung >1 kapal, explode menjadi baris terpisah (1 kapal = 1 baris). Ekstrak: Nama Kapal, Type of Vessel, Code Kapal, Size of Vessel, Year of Built, Type of Material, Classification.'
+      }
+    ];
+  },
+
+  async saveAiPromptTemplate(template) {
+    return { success: true, data: template };
+  },
+
+  async getDemoUnparsedData() {
+    return {
+      data: [
+        {
+          fac_code: 'FAC-MH-001',
+          fac_desc: 'MV Bintang Laut (General Cargo, 5000GT, 2010, Steel, BKI), MT Harapan (Oil Tanker, 8000GT, 2012, Steel, LR)'
+        },
+        {
+          fac_code: 'FAC-MH-002',
+          fac_desc: 'Tugboat Perkasa (Tug, 500GT, 2015, Steel, BKI)'
+        }
+      ]
+    };
+  }
 };
 
 export default facLensService;
