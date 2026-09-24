@@ -80,7 +80,7 @@ export default function AiParsingLoadingOverlay({ fileInfo, onClose }) {
           letterSpacing: '0.02em'
         }}>
           <Lightbulb size={14} />
-          PEMROSESAN AI & VALIDASI BERJALAN
+          PEMROSESAN & VALIDASI BERJALAN
         </div>
 
         {/* Circular Progress Ring */}
@@ -120,13 +120,13 @@ export default function AiParsingLoadingOverlay({ fileInfo, onClose }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', fontSize: '0.7rem', fontWeight: 700, color: '#059669', letterSpacing: '0.05em' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669' }}></span>
-            AI MENGANALISIS
+            MENGANALISIS DATA
           </div>
         </div>
 
         {/* Texts */}
         <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0' }}>
-          Sedang Memproses Data dengan AI
+          Sedang Memproses Data dengan Parsing Engine
         </h2>
         <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: '1.6', margin: '0 0 30px 0', maxWidth: '500px' }}>
           Sistem sedang memvalidasi struktur kolom, normalisasi tipe data,<br/>
@@ -187,7 +187,7 @@ export default function AiParsingLoadingOverlay({ fileInfo, onClose }) {
             <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700 }}>
               3
             </div>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e3a8a' }}>Parsing oleh AI</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e3a8a' }}>Parsing Engine</span>
           </div>
           
           <div style={{ width: '40px', height: '1px', background: '#cbd5e1', margin: '0 12px' }}></div>

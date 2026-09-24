@@ -412,17 +412,18 @@ export const facLensService = {
   },
 
   async runAiParse(payload) {
-    // 10 detik loading simulasi proses AI/ETL sesuai permintaan
+    // 10 detik loading simulasi proses Parsing Engine sesuai permintaan
     await new Promise(resolve => setTimeout(resolve, 10000));
     
     // Memanggil API backend (Python) agar membuat table history & generated_table baru
     const { apiClient } = await import('./apiClient.js');
     
     try {
-      const response = await apiClient.post('/api/ai-parse', payload);
+      // Timeout 60s untuk Parsing Engine (deterministic, tidak perlu lama, tapi aman)
+      const response = await apiClient.post('/api/ai-parse', payload, { timeout: 60000 });
       return response;
     } catch (err) {
-      console.error('Error in AI Parse backend call:', err);
+      console.error('Error in Parsing Engine backend call:', err);
       throw err;
     }
   }

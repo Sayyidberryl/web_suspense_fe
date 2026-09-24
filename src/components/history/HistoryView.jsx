@@ -386,7 +386,7 @@ export default function HistoryView({ initialFileDetail = null }) {
                 <span>{(selectedFile.records_count || 48250).toLocaleString()} Baris</span>
               </div>
               <div className="meta-item">
-                <label>Akurasi Skema AI</label>
+                <label>Akurasi Skema</label>
                 <span>{selectedFile.schema_accuracy || 99.8}%</span>
               </div>
             </div>

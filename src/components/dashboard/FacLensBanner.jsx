@@ -98,7 +98,7 @@ export default function FacLensBanner({
       ? 'MH - Data Loss SLA'
       : activeTab === 'loss_pla'
       ? 'MH - Data Loss PLA'
-      : 'MH - Data AI';
+      : 'MH - Data Hasil Parsing';
 
   return (
     <div className="fac-lens-banner">

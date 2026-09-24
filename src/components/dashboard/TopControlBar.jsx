@@ -13,7 +13,7 @@ export default function TopControlBar({
     { id: 'acceptance', label: 'MH - Data Akseptasi' },
     { id: 'loss_pla', label: 'MH - Data Loss PLA' },
     { id: 'loss_sla', label: 'MH - Data Loss SLA' },
-    { id: 'ai_parsed', label: 'MH - Data Hasil AI', isAiParsed: true }
+    { id: 'ai_parsed', label: 'MH - Data Hasil Parsing', isAiParsed: true }
   ]);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function TopControlBar({
             fontWeight: 700
           }}>
             <Sparkles size={13} />
-            <span>Normalisasi Entitas Granular (AI Parsing Engine)</span>
+            <span>Normalisasi Entitas Granular (Parsing Engine)</span>
           </span>
         )}
       </div>

@@ -55,7 +55,7 @@ export default function App() {
     acceptance: 'MH - Data Akseptasi',
     loss_pla: 'MH - Data Loss PLA',
     loss_sla: 'MH - Data Loss SLA',
-    ai_parsed: 'MH - Data Hasil AI'
+    ai_parsed: 'MH - Data Hasil Parsing'
   });
 
   const [isExporting, setIsExporting] = useState(false);
@@ -381,7 +381,7 @@ export default function App() {
                 cursor: 'pointer'
               }}
             >
-              Buka Layar AI
+              Lihat Progress
             </button>
           </div>
         )}
@@ -428,7 +428,7 @@ export default function App() {
               onStartParsing={handleStartParsing}
               onNavigateToDashboard={(tabKey, title) => {
                 const targetKey = tabKey || 'ai_parsed';
-                const resolvedTitle = title || currentUploadFile.outputTitle || 'MH - Data Hasil AI';
+                const resolvedTitle = title || currentUploadFile.outputTitle || 'MH - Data Hasil Parsing';
                 setTabTitles((prev) => ({
                   ...prev,
                   [targetKey]: resolvedTitle
