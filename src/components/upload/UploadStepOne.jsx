@@ -76,12 +76,21 @@ export default function UploadStepOne({ onProceedToMapping }) {
 
   // Preset 1: Curated Raw Marine Hull Batch for AI Entity Normalization
   const loadUnparsedBatchFile = () => {
+    // Inject valid fac_codes that exist in the database for the dummy rows
+    const dummyRows = [
+      { fac_code: '22FKAAV8', vesselName: 'TB. Marina 1' },
+      { fac_code: '22FCAB0Y', vesselName: 'BG. Sumber Jaya 2' },
+      { fac_code: '22FNAB5X', vesselName: 'MT. Intan Mas' },
+      { fac_code: '22FNAB5X', vesselName: 'MT. Intan Mas' }, // duplicate to test unique set
+    ];
+    
     setSelectedFile({
       name: 'Bordero_MarineHull_Batch_Unparsed.xlsx',
       size: '14.2 KB',
       fileObject: null,
       columnsCount: UNPARSED_10_COLUMNS.length,
-      isAiDemo: true
+      isAiDemo: true,
+      fileRows: dummyRows // This ensures the ETL process has data to extract
     });
     setDetectedColumns(UNPARSED_10_COLUMNS);
     setOutputTitle('MH - Data Akseptasi');
