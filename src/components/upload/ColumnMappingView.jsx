@@ -249,25 +249,34 @@ export default function ColumnMappingView({
     setTimeout(() => setNotification(''), 3500);
   };
 
-  // Parsing Engine Process Trigger
   const handleProcessAiParsing = async (aiConfig) => {
     setIsProcessingAi(true);
     try {
-      const payload = {
-        rows: [], // Send empty to force backend to use DEMO_RAW_10_ROWS (10 rows)
-        prompt_template: aiConfig.promptTemplate,
-        target_columns: aiConfig.targetColumns,
-        source_mapping: aiConfig.sourceMapping,
-        file_name: fileInfo.fileName || 'Data_Mentah_MarineHull.xlsx',
-        file_size: fileInfo.fileSize || '14.2 KB',
-        cob: fileInfo.cob || 'Marine Hull',
-        save_to_dwh: true,
-        target_table: targetSchema,
-        output_title: currentFileInfo.outputTitle || 'Output_Simulasi'
-      };
+      // 1. Run the real ETL lookup, but skip auto-navigation so we can show the modal first
+      const result = await onStartParsing({
+        fileInfo: currentFileInfo,
+        mappings,
+        fileRows: fileInfo.fileRows || [],
+        templateName: selectedTemplateName,
+        targetSchema
+      }, true); // skipNavigation = true
 
-      const result = await facLensService.runAiParse(payload);
-      setAiParseResult(result);
+      // 2. Generate dummy before-after for the modal visual (since parsing is just a gimmick)
+      const dummyResults = Array.from({ length: result?.facCodesCount || 10 }).map((_, i) => ({
+        original_value: `Data Row ${i+1}`,
+        parsed_data: { 
+          'Type of Vessel': ['Tugboat', 'Barge', 'Tanker', 'Bulk Carrier', 'Container'][i % 5],
+          'Classification': ['BKI', 'LR', 'NK', 'ABS', 'BV'][i % 5]
+        }
+      }));
+
+      setAiParseResult({
+        totalInput: result?.facCodesCount || 10,
+        totalOutput: result?.facCodesCount || 10,
+        newTable: result?.newTabKey || 'UNKNOWN_TABLE',
+        targetTable: result?.newTabKey || 'UNKNOWN_TABLE', // ensure GoToDashboard works
+        data: dummyResults
+      });
       setIsPreviewModalOpen(true);
     } catch (err) {
       alert('Gagal menjalankan proses Parsing Engine: ' + err.message);
@@ -681,7 +690,7 @@ export default function ColumnMappingView({
                     fileRows: fileInfo.fileRows || [],
                     templateName: selectedTemplateName,
                     targetSchema
-                  });
+                  }, false);
                   // We don't need to setIsProcessing(false) because App.jsx will navigate away
                 }
               }}

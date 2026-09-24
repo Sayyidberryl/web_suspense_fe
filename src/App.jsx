@@ -300,8 +300,11 @@ export default function App() {
     setTimeout(() => {
       setBackgroundProcessing(null);
     }, 8000);
+  const handleStartParsing = (mappingData, skipNavigation = false) => {
+    // Execute the ETL lookup, returning the promise
+    return handleAiComplete(mappingData, skipNavigation);
   };  // AI Complete -> ETL Lookup: extract fac_codes dari file -> call RPC to create table
-  const handleAiComplete = async (mappingData) => {
+  const handleAiComplete = async (mappingData, skipNavigation = false) => {
     setIsAiModalOpen(false);
 
     // Gunakan mappingData yang dipass dari handleStartParsing, fallback ke currentUploadFile
@@ -378,7 +381,10 @@ export default function App() {
     setTabTitles(prev => ({ ...prev, [newTabKey]: outputTitle }));
     setOpenTabs(prev => prev.includes(newTabKey) ? prev : [...prev, newTabKey]);
     setSelectedTableTab(newTabKey);
-    handleTabChange('dashboard', '/');
+    
+    if (!skipNavigation) {
+      handleTabChange('dashboard', '/');
+    }
     
     setLoading(false);
 
@@ -395,6 +401,8 @@ export default function App() {
       duration_seconds: 3.5,
       log_message: `Tabel ETL fisik (${newTabKey}) berhasil dibuat dengan ${facCodes.length} fac_codes.`,
     }).catch(() => {});
+    
+    return { newTabKey, outputTitle, facCodesCount: facCodes.length };
   };
 
   // From Recent Output on Dashboard to History Detail
