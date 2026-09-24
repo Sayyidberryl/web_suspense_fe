@@ -409,6 +409,49 @@ export const facLensService = {
         }
       ]
     };
+  },
+
+  async runAiParse(payload) {
+    const rawCount = payload.rows ? payload.rows.length : 2;
+    // Mocking an exploded result based on standard marine hull parsing
+    const exploded = [
+      {
+        fac_code: 'FAC-MH-001',
+        nama_kapal: 'MV Bintang Laut',
+        type_of_vessel: 'General Cargo',
+        size_of_vessel: '5000GT',
+        year_of_built: '2010',
+        type_of_material: 'Steel',
+        classification: 'BKI'
+      },
+      {
+        fac_code: 'FAC-MH-001',
+        nama_kapal: 'MT Harapan',
+        type_of_vessel: 'Oil Tanker',
+        size_of_vessel: '8000GT',
+        year_of_built: '2012',
+        type_of_material: 'Steel',
+        classification: 'LR'
+      },
+      {
+        fac_code: 'FAC-MH-002',
+        nama_kapal: 'Tugboat Perkasa',
+        type_of_vessel: 'Tug',
+        size_of_vessel: '500GT',
+        year_of_built: '2015',
+        type_of_material: 'Steel',
+        classification: 'BKI'
+      }
+    ];
+    return {
+      success: true,
+      data: exploded,
+      sourceCount: rawCount,
+      resultCount: exploded.length,
+      expansionRatio: (exploded.length / Math.max(1, rawCount)).toFixed(1),
+      usedEngine: 'Parsing Engine',
+      targetTable: payload.target_table || 'FACUL_ETL_MH_AKSEPTASI'
+    };
   }
 };
 
