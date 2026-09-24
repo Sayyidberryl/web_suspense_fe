@@ -209,6 +209,45 @@ export const mappingService = {
   },
 
   /**
+   * Reads ALL rows (header + data) from an uploaded Excel/CSV file.
+   * Returns: { headers: string[], rows: object[] }
+   */
+  async parseFileData(file) {
+    if (!file) return { headers: [], rows: [] };
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          // header:1 → returns array-of-arrays; first row is header
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+          if (!rawRows || rawRows.length < 2) {
+            resolve({ headers: [], rows: [] });
+            return;
+          }
+          const headers = rawRows[0].map((c) => (c ? String(c).trim() : '')).filter(Boolean);
+          const dataRows = rawRows.slice(1).map((row) => {
+            const obj = {};
+            headers.forEach((h, i) => {
+              obj[h] = row[i] !== undefined && row[i] !== null ? String(row[i]).trim() : '';
+            });
+            return obj;
+          }).filter(row => Object.values(row).some(v => v !== ''));
+          resolve({ headers, rows: dataRows });
+        } catch (err) {
+          console.error('Error parsing file data with SheetJS:', err);
+          resolve({ headers: [], rows: [] });
+        }
+      };
+      reader.onerror = () => resolve({ headers: [], rows: [] });
+      reader.readAsArrayBuffer(file);
+    });
+  },
+
+  /**
    * Generates a flexible mapping template directly from an array of detected column names
    */
   createTemplateFromColumns(columns, templateName = 'Template Impor Excel') {

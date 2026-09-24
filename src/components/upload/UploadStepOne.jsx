@@ -22,8 +22,8 @@ export default function UploadStepOne({ onProceedToMapping }) {
     if (!file) return;
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
 
-    // Parse headers in browser via SheetJS
-    const cols = await mappingService.parseFileHeaders(file);
+    // Parse headers AND all data rows
+    const { headers: cols, rows: fileRows } = await mappingService.parseFileData(file);
     const finalCols = cols && cols.length > 0 ? cols : UNPARSED_10_COLUMNS;
     setDetectedColumns(finalCols);
 
@@ -36,7 +36,8 @@ export default function UploadStepOne({ onProceedToMapping }) {
       name: file.name,
       size: `${sizeMb > 0 ? sizeMb : '14.2'} KB`,
       fileObject: file,
-      columnsCount: finalCols.length
+      columnsCount: finalCols.length,
+      fileRows, // <-- simpan semua baris data
     });
   };
 
@@ -68,7 +69,8 @@ export default function UploadStepOne({ onProceedToMapping }) {
       cob,
       mappingTemplate,
       fileObject: selectedFile.fileObject,
-      detectedColumns: detectedColumns.length > 0 ? detectedColumns : UNPARSED_10_COLUMNS
+      detectedColumns: detectedColumns.length > 0 ? detectedColumns : UNPARSED_10_COLUMNS,
+      fileRows: selectedFile.fileRows || [], // baris data mentah dari file
     });
   };
 

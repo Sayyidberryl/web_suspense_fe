@@ -97,6 +97,12 @@ html, body {
   overflow: hidden;
 }
 
+/* History page needs vertical scrolling */
+.page-container.history-page {
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
 /* Checkbox specific styling */
 .row-checkbox {
   width: 16px;

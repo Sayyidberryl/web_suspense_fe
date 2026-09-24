@@ -38,6 +38,7 @@ export default function ColumnMappingView({
     mappingService.getDefaultMappings(fileInfo.mappingTemplate || 'Template Akseptasi (Marine Hull)')
   );
   const [notification, setNotification] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [currentFileInfo, setCurrentFileInfo] = useState(() => ({
     fileName: fileInfo.fileName || '',
@@ -657,12 +658,13 @@ export default function ColumnMappingView({
           </div>
 
           <div className="mapping-actions-right">
-            <button className="btn-link-back" onClick={onBack}>
+            <button className="btn-link-back" onClick={onBack} disabled={isProcessing}>
               Kembali
             </button>
             <button
               className="btn-primary-parse"
-              onClick={() => {
+              disabled={isProcessing}
+              onClick={async () => {
                 if (isAiEnabled) {
                   // Direct run parsing engine with current settings
                   handleProcessAiParsing({
@@ -671,11 +673,20 @@ export default function ColumnMappingView({
                     promptTemplate: 'Proses simulasi.'
                   });
                 } else {
-                  onStartParsing({ fileInfo, mappings, templateName: selectedTemplateName, targetSchema });
+                  setIsProcessing(true);
+                  // ETL Flow: teruskan mappings dan fileRows untuk lookup fac_code
+                  await onStartParsing({
+                    fileInfo: currentFileInfo,
+                    mappings,
+                    fileRows: fileInfo.fileRows || [],
+                    templateName: selectedTemplateName,
+                    targetSchema
+                  });
+                  // We don't need to setIsProcessing(false) because App.jsx will navigate away
                 }
               }}
             >
-              <span>{isAiEnabled ? '⚡ Proses Parsing Engine' : 'Simpan & Lanjutkan ETL'}</span>
+              <span>{isProcessing ? 'Memproses...' : (isAiEnabled ? '⚡ Proses Parsing Engine' : 'Simpan & Lanjutkan ETL')}</span>
               <ArrowRight size={16} />
             </button>
           </div>

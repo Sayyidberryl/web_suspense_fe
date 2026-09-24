@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Lightbulb, Check, Lock, Clock, ArrowRight } from 'lucide-react';
-import historyService from '../../services/historyService';
 import '../../styles/ai-processing.css';
 
 export default function AiProcessingModal({
@@ -16,11 +15,13 @@ export default function AiProcessingModal({
   onComplete
 }) {
   const [progress, setProgress] = useState(74);
-  const [currentStep, setCurrentStep] = useState(3); // 1: Periksa File, 2: Kolum Input, 3: Parsing Engine, 4: Bangun Output, 5: Selesai
+  const [currentStep, setCurrentStep] = useState(3);
   const [remainingSeconds, setRemainingSeconds] = useState(8);
   const [processedRows, setProcessedRows] = useState(35705);
   const totalRows = 48250;
   const [isDone, setIsDone] = useState(false);
+  const [parseResult, setParseResult] = useState(null);
+  const hasSavedRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen || isDone) return;
@@ -31,26 +32,18 @@ export default function AiProcessingModal({
           clearInterval(interval);
           setIsDone(true);
           setCurrentStep(5);
-          // Save to history backend
-          historyService.createHistory({
-            file_name: fileInfo.fileName || 'Bordero_TriPakarta_Fire_Q3_2026.xlsx',
-            file_size: fileInfo.fileSize || '14.8 MB',
-            file_type: 'XLSX',
-            cedant: fileInfo.cedant || 'PT Asuransi Tri Pakarta',
-            cob: fileInfo.cob || 'Fire & Property',
-            status: 'Berhasil Dimuat',
-            records_count: totalRows,
-            schema_accuracy: 100.0,
-            duration_seconds: 8.2,
-            log_message: 'Pemrosesan Parsing Engine & Validasi selesai 100%. Data berhasil dibangun.'
-          });
+
+          // Hanya panggil 1x — guard dengan ref
+          if (!hasSavedRef.current) {
+            hasSavedRef.current = true;
+            // Creation of table and history log is now handled in App.jsx (handleAiComplete)
+          }
+
           return 100;
         }
 
         const next = prev + 3;
-        if (next >= 90) {
-          setCurrentStep(4);
-        }
+        if (next >= 90) setCurrentStep(4);
         return next > 100 ? 100 : next;
       });
 
@@ -67,8 +60,8 @@ export default function AiProcessingModal({
 
   if (!isOpen) return null;
 
-  // SVG circular math (radius 60, circumference = 2 * PI * 60 = 377)
-  const radius = 60;
+  // SVG circular math: viewBox 0 0 160 160, center=80, radius=68
+  const radius = 68;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
@@ -78,16 +71,16 @@ export default function AiProcessingModal({
         {/* Top Badge */}
         <div className="ai-top-badge">
           <Lightbulb size={14} />
-          <span>Pemrosesan Parsing Engine Berjalan</span>
+          <span>ETL Lookup — Mencari Data di Database</span>
         </div>
 
         {/* Circular Progress Gauge */}
         <div className="ai-progress-circle-wrap">
-          <svg>
+          <svg viewBox="0 0 160 160">
             <defs>
               <linearGradient id="aiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#06b6d4" />
-                <stop offset="100%" stopColor="#0284c7" />
+                <stop offset="0%" stopColor="#0ea5e9" />
+                <stop offset="100%" stopColor="#0d9488" />
               </linearGradient>
             </defs>
             <circle
@@ -109,19 +102,19 @@ export default function AiProcessingModal({
           <div className="circle-inner-content">
             <span className="percent-text">{progress}%</span>
             <span className="status-sub-indicator">
-              {isDone ? 'Pemrosesan Selesai' : 'Sedang Memproses'}
+              {isDone ? 'Selesai' : 'Memproses'}
             </span>
           </div>
         </div>
 
         {/* Title and Subtitle */}
         <h2 className="ai-modal-title">
-          {isDone ? 'Data Berhasil Diproses!' : 'Sedang Memproses Data'}
+          {isDone ? 'Data Berhasil Ditemukan!' : 'Mencari Data di Database'}
         </h2>
         <p className="ai-modal-desc">
           {isDone
-            ? 'Struktur dan output data telah berhasil dibangun oleh Parsing Engine.'
-            : 'Sistem sedang membaca file, mencocokkan input, dan memproses data melalui Parsing Engine.'}
+            ? `Tab baru dengan data hasil pencarian siap ditampilkan di Dashboard.`
+            : 'Sistem membaca FAC Code dari file upload, lalu mencari baris yang cocok di database Supabase.'}
         </p>
 
         {/* File pill */}
@@ -162,39 +155,39 @@ export default function AiProcessingModal({
           {/* Step 1: Memeriksa file */}
           <div className="step-item completed">
             <Check size={14} className="step-icon-check" />
-            <span>Memeriksa File</span>
+            <span>Baca File</span>
           </div>
 
           <div className="step-divider-line done" />
 
-          {/* Step 2: Memeriksa kolum input */}
+          {/* Step 2: Identifikasi FAC Code */}
           <div className="step-item completed">
             <Check size={14} className="step-icon-check" />
-            <span>Memeriksa Kolum</span>
+            <span>Identifikasi FAC Code</span>
           </div>
 
           <div className="step-divider-line done" />
 
-          {/* Step 3: Parsing Engine */}
+          {/* Step 3: Cari di Database */}
           <div className={`step-item ${currentStep === 3 ? 'active' : currentStep > 3 ? 'completed' : ''}`}>
             {currentStep > 3 ? (
               <Check size={14} className="step-icon-check" />
             ) : (
               <div className="step-number-circle">3</div>
             )}
-            <span>Parsing Engine</span>
+            <span>Cari di Database</span>
           </div>
 
           <div className={`step-divider-line ${currentStep >= 4 ? 'done' : ''}`} />
 
-          {/* Step 4: Membangun output */}
+          {/* Step 4: Bangun Tab Output */}
           <div className={`step-item ${currentStep === 4 ? 'active' : currentStep > 4 ? 'completed' : ''}`}>
             {currentStep > 4 ? (
               <Check size={14} className="step-icon-check" />
             ) : (
               <div className="step-number-circle">4</div>
             )}
-            <span>Membangun Output</span>
+            <span>Bangun Tab Output</span>
           </div>
 
           <div className={`step-divider-line ${currentStep >= 5 ? 'done' : ''}`} />
@@ -237,7 +230,7 @@ export default function AiProcessingModal({
                 if (onComplete) onComplete();
               }}
             >
-              <span>Lihat di History</span>
+              <span>Lihat di Dashboard</span>
               <ArrowRight size={16} />
             </button>
           )}

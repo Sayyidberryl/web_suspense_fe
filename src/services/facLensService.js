@@ -411,9 +411,11 @@ export const facLensService = {
     };
   },
 
-  async runAiParse(payload) {
-    // 10 detik loading simulasi proses Parsing Engine sesuai permintaan
-    await new Promise(resolve => setTimeout(resolve, 10000));
+  async runAiParse(payload, { skipDelay = false } = {}) {
+    // 10 detik loading simulasi hanya untuk ColumnMappingView yang punya overlay sendiri
+    if (!skipDelay) {
+      await new Promise(resolve => setTimeout(resolve, 10000));
+    }
     
     // Memanggil API backend (Python) agar membuat table history & generated_table baru
     const { apiClient } = await import('./apiClient.js');
@@ -426,7 +428,49 @@ export const facLensService = {
       console.error('Error in Parsing Engine backend call:', err);
       throw err;
     }
-  }
+  },
+
+  /**
+   * Panggil RPC Supabase untuk membuat tabel fisik baru dan insert data.
+   */
+  async createEtlTableRpc(facCodes, baseTableId, outputTitle, fileName) {
+    const cfg = TABLE_CONFIG.find(t => t.id === baseTableId) || TABLE_CONFIG[0];
+    const safeTitle = outputTitle.replace(/[^a-zA-Z0-9_]/g, '_').toUpperCase().substring(0, 30);
+    const timestampSuffix = Math.floor(Date.now() / 1000);
+    const newTableName = `etl_out_${safeTitle}_${timestampSuffix}`.toLowerCase();
+
+    const payload = {
+      p_new_table_name: newTableName,
+      p_base_table_name: cfg.tableName,
+      p_fac_codes: facCodes,
+      p_label: outputTitle || cfg.label,
+      p_description: `Hasil ETL Lookup dari ${fileName}`
+    };
+
+    const url = `${SUPABASE_URL}/rest/v1/rpc/create_etl_table`;
+    
+    try {
+      const res = await fetch(url, { 
+        method: 'POST',
+        headers: {
+          ...SUPABASE_HEADERS,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`RPC failed: ${res.status} - ${errText}`);
+      }
+      
+      return { success: true, tableName: newTableName };
+    } catch (err) {
+      console.error('createEtlTableRpc error:', err);
+      throw err;
+    }
+  },
 };
 
 export default facLensService;
+

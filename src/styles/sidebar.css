@@ -1,4 +1,4 @@
-/* Sidebar Styles Redesign */
+/* Sidebar Styles */
 .sidebar {
   width: var(--sidebar-width);
   background-color: var(--bg-sidebar);
@@ -64,6 +64,10 @@
   gap: 8px;
 }
 
+.sidebar-nav-label {
+  display: none;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -96,4 +100,8 @@
   width: 20px;
   height: 20px;
   color: inherit;
+}
+
+.sidebar-footer {
+  display: none;
 }

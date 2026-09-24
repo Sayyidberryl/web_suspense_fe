@@ -69,35 +69,34 @@
   transform: rotate(-90deg);
   width: 160px;
   height: 160px;
+  display: block;
 }
 
 .circle-bg {
   fill: none;
   stroke: #f1f5f9;
-  stroke-width: 12;
+  stroke-width: 10;
 }
 
 .circle-meter {
   fill: none;
-  stroke-width: 12;
+  stroke-width: 10;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.4s ease;
 }
 
 .circle-inner-content {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 }
 
 .percent-text {
-  font-size: 2.1rem;
+  font-size: 1.8rem;
   font-weight: 800;
   color: #0f172a;
   line-height: 1;
@@ -107,12 +106,12 @@
 .status-sub-indicator {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.65rem;
+  gap: 4px;
+  font-size: 0.58rem;
   font-weight: 700;
   color: #059669;
-  letter-spacing: 0.05em;
-  margin-top: 6px;
+  letter-spacing: 0.04em;
+  margin-top: 5px;
   text-transform: uppercase;
 }
 

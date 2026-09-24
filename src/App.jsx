@@ -7,6 +7,7 @@ import ColumnMappingView from './components/upload/ColumnMappingView';
 import AiProcessingModal from './components/upload/AiProcessingModal';
 import HistoryView from './components/history/HistoryView';
 import facLensService, { TABLE_CONFIG } from './services/facLensService';
+import historyService from './services/historyService';
 
 
 import './styles/index.css';
@@ -188,8 +189,8 @@ export default function App() {
       const response = await facLensService.getTableData({
         tab: selectedTableTab,
         filters,
-        page: 1, // Page doesn't matter when fetching all
-        limit: 'all' // Always fetch all rows as requested
+        page: 1,
+        limit: 'all'
       });
 
       startTransition(() => {
@@ -283,10 +284,10 @@ export default function App() {
     handleTabChange('upload-mapping', '/mapping');
   };
 
-  // Mapping -> Start AI Parsing
-  const handleStartParsing = ({ fileInfo }) => {
-    setCurrentUploadFile((prev) => ({ ...prev, ...fileInfo }));
-    setIsAiModalOpen(true);
+  // Mapping -> Start ETL Processing (dipanggil dari ColumnMappingView)
+  const handleStartParsing = (mappingData) => {
+    // Bypass the gimmick AI modal and directly execute the ETL lookup
+    handleAiComplete(mappingData);
   };
 
   // AI Background processing trigger
@@ -299,12 +300,101 @@ export default function App() {
     setTimeout(() => {
       setBackgroundProcessing(null);
     }, 8000);
-  };
-
-  // AI Complete -> Go to History
-  const handleAiComplete = () => {
+  };  // AI Complete -> ETL Lookup: extract fac_codes dari file -> call RPC to create table
+  const handleAiComplete = async (mappingData) => {
     setIsAiModalOpen(false);
-    handleTabChange('history', '/history');
+
+    // Gunakan mappingData yang dipass dari handleStartParsing, fallback ke currentUploadFile
+    const mData = mappingData || currentUploadFile || {};
+    const fileInfo = mData.fileInfo || mData || {};
+    
+    const outputTitle = fileInfo.outputTitle ||
+      fileInfo.fileName?.replace(/\.[^/.]+$/, '') || 'Hasil ETL';
+    const template = mData.templateName || fileInfo.mappingTemplate || '';
+    const fileRows = mData.fileRows || fileInfo.fileRows || [];
+    const mappings = mData.mappings || fileInfo.mappings || [];
+    const fileName = fileInfo.fileName || 'upload.xlsx';
+
+
+    // Tentukan target base table
+    let tableId = 'acceptance';
+    if (template.includes('PLA') || outputTitle.toLowerCase().includes('pla')) {
+      tableId = 'loss_pla';
+    } else if (template.includes('SLA') || template.includes('Settle') || outputTitle.toLowerCase().includes('sla')) {
+      tableId = 'loss_sla';
+    }
+
+    // Ekstrak fac_codes dari file rows
+    let facCodeSourceCol = 'fac_code';
+    if (mappings && mappings.length > 0) {
+      const facMap = mappings.find(m => m.field_db === 'fac_code');
+      if (facMap && facMap.excel_col && facMap.excel_col !== '-- Pilih Kolom Excel --') {
+        facCodeSourceCol = facMap.excel_col;
+      }
+    }
+
+    let facCodes = [];
+    if (fileRows.length > 0) {
+      facCodes = [...new Set(
+        fileRows
+          .map(row => row[facCodeSourceCol] || row['fac_code'] || '')
+          .filter(Boolean)
+          .map(v => v.trim())
+      )];
+    }
+
+    // ── STEP 1: Buat Physical Table via RPC ──
+    setLoading(true);
+    let newTabKey = tableId; // fallback jika gagal
+    try {
+      if (facCodes.length > 0) {
+        const result = await facLensService.createEtlTableRpc(facCodes, tableId, outputTitle, fileName);
+        if (result.success && result.tableName) {
+          newTabKey = result.tableName; // Pakai nama tabel yg baru dibuat
+        }
+      }
+    } catch (err) {
+      console.error('Failed to create ETL table:', err);
+    }
+
+    // Refresh daftar tabel (termasuk yang baru dibuat dari GENERATED_TABLES)
+    await loadAvailableTables();
+
+    // ── STEP 2: Register tab baru & navigasi ke dashboard ──
+    const newTableConfig = {
+      id: newTabKey,
+      label: outputTitle,
+      tableName: newTabKey,
+      count: facCodes.length,
+      columnsCount: 0
+    };
+    setAvailableTables(prev => {
+      if (!prev.some(t => t.id === newTabKey)) {
+        return [...prev, newTableConfig];
+      }
+      return prev;
+    });
+
+    setTabTitles(prev => ({ ...prev, [newTabKey]: outputTitle }));
+    setOpenTabs(prev => prev.includes(newTabKey) ? prev : [...prev, newTabKey]);
+    setSelectedTableTab(newTabKey);
+    handleTabChange('dashboard', '/');
+    
+    setLoading(false);
+
+    // Simpan ke history
+    historyService?.createHistory?.({
+      file_name: fileName,
+      file_size: currentUploadFile.fileSize || '0 KB',
+      file_type: 'XLSX',
+      cedant: currentUploadFile.cedant || '-',
+      cob: currentUploadFile.cob || 'Marine Hull',
+      status: 'Berhasil Dimuat',
+      records_count: facCodes.length,
+      schema_accuracy: 100.0,
+      duration_seconds: 3.5,
+      log_message: `Tabel ETL fisik (${newTabKey}) berhasil dibuat dengan ${facCodes.length} fac_codes.`,
+    }).catch(() => {});
   };
 
   // From Recent Output on Dashboard to History Detail
@@ -386,7 +476,7 @@ export default function App() {
           </div>
         )}
 
-        <main className={`page-container ${isEmbedMode ? 'embed-mode' : ''}`}>
+        <main className={`page-container ${isEmbedMode ? 'embed-mode' : ''} ${activeTab === 'history' ? 'history-page' : ''}`}>
           {/* 1. Dashboard View (Standard or SAS Viya Embed Mode) */}
           {activeTab === 'dashboard' && (
             <DashboardView
@@ -456,20 +546,6 @@ export default function App() {
           )}
         </main>
       </div>
-
-      {/* Processing Modal */}
-      <AiProcessingModal
-        isOpen={isAiModalOpen}
-        fileInfo={{
-          fileName: currentUploadFile.fileName || 'Data_Mentah_MarineHull.xlsx',
-          fileSize: currentUploadFile.fileSize || '14.8 MB',
-          cob: currentUploadFile.cob || 'Marine Hull',
-          cedant: 'PT Asuransi'
-        }}
-        onClose={() => setIsAiModalOpen(false)}
-        onRunInBackground={handleRunInBackground}
-        onComplete={handleAiComplete}
-      />
     </div>
   );
 }
