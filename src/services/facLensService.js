@@ -27,8 +27,8 @@ export const TABLE_CONFIG = [
   {
     id: 'acceptance_merge_okt',
     tableName: 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT',
-    label: 'MH - Akseptasi Merge Okt',
-    fullLabel: 'MH - Data Akseptasi Merge Oktober',
+    label: 'MH - Merged Akseptasi',
+    fullLabel: 'MH - Merged Akseptasi',
     description: 'Tabel DWH akseptasi hasil merge Oktober (203.743 baris)',
   },
   {

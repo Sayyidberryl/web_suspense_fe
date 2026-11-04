@@ -51,7 +51,7 @@ export default function App() {
   // Dynamic titles for sheet tabs (synced with table and file titles)
   const [tabTitles, setTabTitles] = useState({
     acceptance: 'MH - Data Akseptasi',
-    acceptance_merge_okt: 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT',
+    acceptance_merge_okt: 'MH - Merged Akseptasi',
     loss_pla: 'MH - Data Loss PLA',
     loss_sla: 'MH - Data Loss SLA'
   });

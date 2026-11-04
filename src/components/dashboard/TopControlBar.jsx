@@ -11,7 +11,7 @@ export default function TopControlBar({
 }) {
   const [tables, setTables] = useState([
     { id: 'acceptance', label: 'MH - Data Akseptasi' },
-    { id: 'acceptance_merge_okt', label: 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT' },
+    { id: 'acceptance_merge_okt', label: 'MH - Merged Akseptasi' },
     { id: 'loss_pla', label: 'MH - Data Loss PLA' },
     { id: 'loss_sla', label: 'MH - Data Loss SLA' }
   ]);
