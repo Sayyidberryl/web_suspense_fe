@@ -23,7 +23,13 @@ export const TABLE_CONFIG = [
     label: 'MH - Data Akseptasi',
     fullLabel: 'MH - Data Akseptasi',
     description: 'Tabel DWH akseptasi polis, slip penutupan, dan portofolio risiko kapal',
-    isAiParsed: false,
+  },
+  {
+    id: 'acceptance_merge_okt',
+    tableName: 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT',
+    label: 'MH - Akseptasi Merge Okt',
+    fullLabel: 'MH - Data Akseptasi Merge Oktober',
+    description: 'Tabel DWH akseptasi hasil merge Oktober (203.743 baris)',
   },
   {
     id: 'loss_pla',
@@ -31,7 +37,6 @@ export const TABLE_CONFIG = [
     label: 'MH - Data Loss PLA',
     fullLabel: 'MH - Data Loss PLA',
     description: 'Tabel klaim loss yang masih outstanding / belum diselesaikan',
-    isAiParsed: false,
   },
   {
     id: 'loss_sla',
@@ -39,15 +44,6 @@ export const TABLE_CONFIG = [
     label: 'MH - Data Loss SLA',
     fullLabel: 'MH - Data Loss SLA',
     description: 'Tabel klaim loss yang telah diselesaikan (settled)',
-    isAiParsed: false,
-  },
-  {
-    id: 'hasil_testing',
-    tableName: 'etl_out_testing_mh_1',
-    label: 'Hasil Testing MH',
-    fullLabel: 'Hasil Testing MH',
-    description: 'Tabel hasil proses file testing_mh.xlsx (Berbeda dari Akseptasi)',
-    isAiParsed: true,
   }
 ];
 
@@ -95,7 +91,7 @@ const COL_LABEL_MAP = {
 /** Auto-generate column metadata from a sample row */
 function inferColumns(sampleRow, tableId) {
   if (!sampleRow) return [];
-  const isAcceptance = tableId === 'acceptance';
+  const isAcceptance = tableId === 'acceptance' || tableId === 'acceptance_merge_okt' || tableId === 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT';
   return Object.keys(sampleRow)
     .filter((k) => {
       if (k === 'id') return false;
@@ -140,7 +136,7 @@ function buildFilterParams(tableId, filters = {}) {
     parts.push(`date_of_loss=eq.${encodeURIComponent(filters.dateOfLoss.trim())}`);
   }
 
-  const isAcceptance = tableId === 'acceptance' || tableId.startsWith('etl_out_'); // Fallback to acceptance if dynamic table
+  const isAcceptance = tableId === 'acceptance' || tableId === 'acceptance_merge_okt' || tableId === 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT' || tableId.startsWith('etl_out_'); // Fallback to acceptance if dynamic table
   
   if (isAcceptance) {
     addIlike('direct', filters.companyName);
@@ -186,8 +182,8 @@ export const facLensService = {
           label: g.label || g.table_name,
           fullLabel: g.label || g.table_name,
           description: g.description,
-          isAiParsed: false,
-          source_table: g.source_table
+          source_table: g.source_table,
+          isEtlOutput: true
         }));
       }
     } catch (err) {
@@ -216,10 +212,16 @@ export const facLensService = {
 
   /**
    * Fetch paginated data from a given DWH table directly via Supabase.
+   * Supports both static TABLE_CONFIG entries and dynamic ETL output tables.
    * Returns full columns (no hardcoding), inferred from the first row.
    */
   async getTableData({ tab = 'acceptance', filters = {}, page = 1, limit = 25 } = {}) {
-    const cfg = TABLE_CONFIG.find((t) => t.id === tab) || TABLE_CONFIG[0];
+    // Look up in static config first, then dynamic generated tables
+    let cfg = TABLE_CONFIG.find((t) => t.id === tab);
+    if (!cfg) {
+      // Dynamic table: tab IS the tableName (e.g. "etl_out_..._123456")
+      cfg = { id: tab, tableName: tab, label: tab, fullLabel: tab };
+    }
     const tableName = cfg.tableName;
     const offset = (page - 1) * limit;
 
@@ -295,7 +297,7 @@ export const facLensService = {
 
       if (!data || !data.length) return;
 
-      const isAcceptance = tableId === 'acceptance';
+      const isAcceptance = tableId === 'acceptance' || tableId === 'acceptance_merge_okt' || tableId === 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT';
       const keys = Object.keys(data[0]).filter(
         (k) => k !== 'id' && !(isAcceptance && k === 'status')
       );
@@ -336,7 +338,11 @@ export const facLensService = {
     filters = {},
     inMemoryData = null,
   } = {}) {
-    const cfg = TABLE_CONFIG.find((t) => t.id === tableId) || TABLE_CONFIG[0];
+    // Support both static and dynamic ETL output tables
+    let cfg = TABLE_CONFIG.find((t) => t.id === tableId);
+    if (!cfg) {
+      cfg = { id: tableId, tableName: tableId, label: title };
+    }
     let rowsToExport = [];
 
     try {
@@ -357,7 +363,7 @@ export const facLensService = {
         return false;
       }
 
-      const isAcceptance = tableId === 'acceptance';
+      const isAcceptance = tableId === 'acceptance' || tableId === 'acceptance_merge_okt' || tableId === 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT';
       const keys = Object.keys(rowsToExport[0]).filter(
         (k) => k !== 'id' && !(isAcceptance && k === 'status')
       );
@@ -413,95 +419,104 @@ export const facLensService = {
     }
   },
 
-  /**
-   * Mock functions for Parsing Engine Demo
-   */
-  async getAiPromptTemplates() {
-    return [
-      {
-        id: '1',
-        name: 'Ekstraksi & Explode Entitas Kapal Marine Hull (Multi-Vessel to Rows)',
-        prompt_text: 'Anda adalah Senior Data Warehouse Engineer & Marine Insurance Specialist. Ekstrak entitas kapal individual dari deskripsi mentah. Jika 1 baris mengandung >1 kapal, explode menjadi baris terpisah (1 kapal = 1 baris). Ekstrak: Nama Kapal, Type of Vessel, Code Kapal, Size of Vessel, Year of Built, Type of Material, Classification.'
-      }
-    ];
-  },
 
-  async saveAiPromptTemplate(template) {
-    return { success: true, data: template };
-  },
-
-  async getDemoUnparsedData() {
-    return {
-      data: [
-        {
-          fac_code: 'FAC-MH-001',
-          fac_desc: 'MV Bintang Laut (General Cargo, 5000GT, 2010, Steel, BKI), MT Harapan (Oil Tanker, 8000GT, 2012, Steel, LR)'
-        },
-        {
-          fac_code: 'FAC-MH-002',
-          fac_desc: 'Tugboat Perkasa (Tug, 500GT, 2015, Steel, BKI)'
-        }
-      ]
-    };
-  },
-
-  async runAiParse(payload, { skipDelay = false } = {}) {
-    // 10 detik loading simulasi hanya untuk ColumnMappingView yang punya overlay sendiri
-    if (!skipDelay) {
-      await new Promise(resolve => setTimeout(resolve, 10000));
-    }
-    
-    // Memanggil API backend (Python) agar membuat table history & generated_table baru
-    const { apiClient } = await import('./apiClient.js');
-    
-    try {
-      // Timeout 60s untuk Parsing Engine (deterministic, tidak perlu lama, tapi aman)
-      const response = await apiClient.post('/api/ai-parse', payload, { timeout: 60000 });
-      return response;
-    } catch (err) {
-      console.error('Error in Parsing Engine backend call:', err);
-      throw err;
-    }
-  },
 
   /**
-   * Panggil RPC Supabase untuk membuat tabel fisik baru dan insert data.
+   * Jalankan ETL lookup via backend API:
+   * extract fac_codes dari file → match ke tabel sumber → buat tabel baru di DB.
+   * Menggunakan backend /api/etl-lookup (bukan Supabase RPC).
    */
   async createEtlTableRpc(facCodes, baseTableId, outputTitle, fileName) {
     const cfg = TABLE_CONFIG.find(t => t.id === baseTableId) || TABLE_CONFIG[0];
-    const safeTitle = outputTitle.replace(/[^a-zA-Z0-9_]/g, '_').toUpperCase().substring(0, 30);
-    const timestampSuffix = Math.floor(Date.now() / 1000);
-    const newTableName = `etl_out_${safeTitle}_${timestampSuffix}`.toLowerCase();
+    const envUrl = import.meta.env.VITE_API_BASE_URL || 'https://superetlapi.vercel.app';
+    let base = envUrl.replace(/\/+$/, '');
+    if (base.endsWith('/api')) base = base.slice(0, -4);
 
     const payload = {
-      p_new_table_name: newTableName,
-      p_base_table_name: cfg.tableName,
-      p_fac_codes: facCodes,
-      p_label: outputTitle || cfg.label,
-      p_description: `Hasil ETL Lookup dari ${fileName}`
+      fac_codes: facCodes,
+      target_table: cfg.tableName,
+      output_title: outputTitle,
+      file_name: fileName,
     };
 
-    const url = `${SUPABASE_URL}/rest/v1/rpc/create_etl_table`;
-    
+    const res = await fetch(`${base}/api/etl-lookup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`ETL lookup failed: ${res.status} - ${errText}`);
+    }
+
+    const data = await res.json();
+    return { 
+      success: true, 
+      tableName: data.table_name,
+      matchedCount: data.matched_count,
+      totalInput: data.total_input
+    };
+  },
+
+  /**
+   * Rename an ETL output table label.
+   * Calls backend PATCH /api/tables/{table_name}, falls back to Supabase direct PATCH.
+   */
+  async renameGeneratedTable(tableName, newLabel) {
+    const envUrl = import.meta.env.VITE_API_BASE_URL || 'https://superetlapi.vercel.app';
+    let base = envUrl.replace(/\/+$/, '');
+    if (base.endsWith('/api')) base = base.slice(0, -4);
+
     try {
-      const res = await fetch(url, { 
-        method: 'POST',
-        headers: {
-          ...SUPABASE_HEADERS,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
+      const res = await fetch(`${base}/api/tables/${encodeURIComponent(tableName)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: newLabel }),
       });
-      
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`RPC failed: ${res.status} - ${errText}`);
-      }
-      
-      return { success: true, tableName: newTableName };
+      if (res.ok) return { success: true };
+      throw new Error(`Backend rename failed: ${res.status}`);
     } catch (err) {
-      console.error('createEtlTableRpc error:', err);
-      throw err;
+      console.warn('Backend rename failed, trying Supabase direct:', err.message);
+      // Fallback: Supabase PostgREST direct update
+      const res2 = await fetch(
+        `${SUPABASE_URL}/rest/v1/generated_tables?table_name=eq.${encodeURIComponent(tableName)}`,
+        {
+          method: 'PATCH',
+          headers: { ...SUPABASE_HEADERS, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ label: newLabel }),
+        }
+      );
+      if (!res2.ok) throw new Error(`Supabase rename failed: ${await res2.text()}`);
+      return { success: true };
+    }
+  },
+
+  /**
+   * Delete an ETL output table (drops physical table + removes from generated_tables registry).
+   * Calls backend DELETE /api/tables/{table_name}, falls back to Supabase direct DELETE.
+   */
+  async deleteGeneratedTable(tableName) {
+    const envUrl = import.meta.env.VITE_API_BASE_URL || 'https://superetlapi.vercel.app';
+    let base = envUrl.replace(/\/+$/, '');
+    if (base.endsWith('/api')) base = base.slice(0, -4);
+
+    try {
+      const res = await fetch(`${base}/api/tables/${encodeURIComponent(tableName)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (res.ok) return { success: true };
+      throw new Error(`Backend delete failed: ${res.status}`);
+    } catch (err) {
+      console.warn('Backend delete failed, trying Supabase direct:', err.message);
+      // Fallback: Supabase PostgREST direct delete (only removes registry entry, not physical table)
+      const res2 = await fetch(
+        `${SUPABASE_URL}/rest/v1/generated_tables?table_name=eq.${encodeURIComponent(tableName)}`,
+        { method: 'DELETE', headers: SUPABASE_HEADERS }
+      );
+      if (!res2.ok) throw new Error(`Supabase delete failed: ${await res2.text()}`);
+      return { success: true };
     }
   },
 };

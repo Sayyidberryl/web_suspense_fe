@@ -4,11 +4,9 @@ import Header from './components/layout/Header';
 import DashboardView from './components/dashboard/DashboardView';
 import UploadStepOne from './components/upload/UploadStepOne';
 import ColumnMappingView from './components/upload/ColumnMappingView';
-import AiProcessingModal from './components/upload/AiProcessingModal';
 import HistoryView from './components/history/HistoryView';
 import facLensService, { TABLE_CONFIG } from './services/facLensService';
 import historyService from './services/historyService';
-
 
 import './styles/index.css';
 import './styles/sidebar.css';
@@ -16,7 +14,6 @@ import './styles/dashboard.css';
 import './styles/table.css';
 import './styles/upload.css';
 import './styles/mapping.css';
-import './styles/ai-processing.css';
 import './styles/history.css';
 
 // Route detection helper for standalone URLs: /dashboard, /mapping, /upload, /history
@@ -54,9 +51,9 @@ export default function App() {
   // Dynamic titles for sheet tabs (synced with table and file titles)
   const [tabTitles, setTabTitles] = useState({
     acceptance: 'MH - Data Akseptasi',
+    acceptance_merge_okt: 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT',
     loss_pla: 'MH - Data Loss PLA',
-    loss_sla: 'MH - Data Loss SLA',
-    ai_parsed: 'MH - Data Hasil Parsing'
+    loss_sla: 'MH - Data Loss SLA'
   });
 
   const [isExporting, setIsExporting] = useState(false);
@@ -94,7 +91,7 @@ export default function App() {
   const [, startTransition] = useTransition();
 
   // Dashboard Dynamic Tabs State
-  const [openTabs, setOpenTabs] = useState(['acceptance', 'loss_pla', 'loss_sla', 'hasil_testing']);
+  const [openTabs, setOpenTabs] = useState(['acceptance', 'acceptance_merge_okt', 'loss_pla', 'loss_sla']);
 
   const handleAddTab = (tabId) => {
     if (!openTabs.includes(tabId)) {
@@ -109,18 +106,48 @@ export default function App() {
       if (tabId === selectedTableTab && newTabs.length > 0) {
         setSelectedTableTab(newTabs[newTabs.length - 1]);
       } else if (newTabs.length === 0) {
-        setSelectedTableTab(null);
+        setSelectedTableTab('acceptance');
       }
       return newTabs;
     });
   };
 
-  const handleRenameTab = (tabId, newTitle) => {
+  const handleRenameTab = async (tabId, newTitle) => {
     if (!newTitle || !newTitle.trim()) return;
+    const trimmed = newTitle.trim();
     setTabTitles((prev) => ({
       ...prev,
-      [tabId]: newTitle.trim()
+      [tabId]: trimmed
     }));
+
+    if (tabId && (tabId.startsWith('etl_out_') || availableTables.some((t) => t.tableName === tabId))) {
+      try {
+        await facLensService.renameGeneratedTable(tabId, trimmed);
+        await loadAvailableTables();
+      } catch (err) {
+        console.warn('Failed to update table name in database:', err);
+      }
+    }
+  };
+
+  const handleDeleteTable = async (tabId) => {
+    const tableNameToDisplay = tabTitles[tabId] || tabId;
+    if (!window.confirm(`Hapus tabel '${tableNameToDisplay}' secara permanen dari database?`)) {
+      return;
+    }
+    setLoading(true);
+    try {
+      await facLensService.deleteGeneratedTable(tabId);
+      handleCloseTab(tabId);
+      await loadAvailableTables();
+      if (selectedTableTab === tabId) {
+        setSelectedTableTab('acceptance');
+      }
+    } catch (err) {
+      alert('Gagal menghapus tabel: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Upload & Mapping Flow State
@@ -133,8 +160,6 @@ export default function App() {
     detectedColumns: ['fac_code', 'fac_risk', 'fac_desc', 'fac_old_ref', 'fac_cedant', 'fac_broker', 'fac_insured', 'currency', 'fac_totsi', 'fac_our_amt']
   });
 
-  // AI Modal State
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [backgroundProcessing, setBackgroundProcessing] = useState(null);
 
   // Selected file for history detail modal from Dashboard RecentOutput
@@ -286,7 +311,7 @@ export default function App() {
 
 
 
-  // AI Background processing trigger
+  // Background processing trigger
   const handleRunInBackground = (fileInfo) => {
     setBackgroundProcessing({
       fileName: fileInfo.fileName,
@@ -299,11 +324,11 @@ export default function App() {
   };
 
   const handleStartParsing = (mappingData, skipNavigation = false) => {
-    // Execute the ETL lookup, returning the promise
-    return handleAiComplete(mappingData, skipNavigation);
-  };  // AI Complete -> ETL Lookup: extract fac_codes dari file -> call RPC to create table
-  const handleAiComplete = async (mappingData, skipNavigation = false) => {
-    setIsAiModalOpen(false);
+    return handleEtlComplete(mappingData, skipNavigation);
+  };
+
+  // ETL Process Complete: extract fac_codes dari file -> call RPC to create table
+  const handleEtlComplete = async (mappingData, skipNavigation = false) => {
 
     // Gunakan mappingData yang dipass dari handleStartParsing, fallback ke currentUploadFile
     const mData = mappingData || currentUploadFile || {};
@@ -325,33 +350,68 @@ export default function App() {
       tableId = 'loss_sla';
     }
 
-    // Ekstrak fac_codes dari file rows
-    let facCodeSourceCol = 'fac_code';
+    // Robust detection of the column holding fac_code / policy reference
+    let facCodeSourceCol = null;
     if (mappings && mappings.length > 0) {
-      const facMap = mappings.find(m => m.field_db === 'fac_code');
+      const facMap = mappings.find(m => 
+        m.field_db === 'fac_code' || 
+        m.field_db === 'kode_fac' ||
+        m.standard_name?.toLowerCase().includes('fac code') || 
+        m.standard_name?.toLowerCase().includes('kode fac')
+      );
       if (facMap && facMap.excel_col && facMap.excel_col !== '-- Pilih Kolom Excel --') {
         facCodeSourceCol = facMap.excel_col;
       }
     }
 
+    // If not explicitly mapped, inspect fileRows keys directly
+    if (!facCodeSourceCol && fileRows.length > 0) {
+      const firstRow = fileRows[0] || {};
+      const rowKeys = Object.keys(firstRow);
+      // Priority 1: common fac code identifiers
+      const exactMatch = rowKeys.find(k => {
+        const clean = k.toLowerCase().replace(/[\s_-]/g, '');
+        return ['faccode', 'kodefac', 'faccd', 'nofac', 'facno', 'ccosrefcode1', 'ccosrefcode'].includes(clean);
+      });
+      // Priority 2: partial match on fac + code
+      const partialMatch = rowKeys.find(k => {
+        const lk = k.toLowerCase();
+        return lk.includes('fac') && (lk.includes('code') || lk.includes('cd') || lk.includes('kode'));
+      });
+      // Priority 3: reference or policy
+      const refMatch = rowKeys.find(k => {
+        const lk = k.toLowerCase();
+        return lk.includes('ref') || lk.includes('polis') || lk.includes('policy') || lk.includes('slip');
+      });
+
+      facCodeSourceCol = exactMatch || partialMatch || refMatch || (rowKeys.length === 1 ? rowKeys[0] : 'fac_code');
+    }
+
     let facCodes = [];
-    if (fileRows.length > 0) {
-      facCodes = [...new Set(
-        fileRows
-          .map(row => row[facCodeSourceCol] || row['fac_code'] || '')
-          .filter(Boolean)
-          .map(v => v.trim())
-      )];
+    if (fileRows.length > 0 && facCodeSourceCol) {
+      // PRESERVE EXACT ROW ORDER & ALL ROWS (NO DEDUPLICATION VIA SET)
+      const targetLower = facCodeSourceCol.toLowerCase();
+      facCodes = fileRows
+        .map(row => {
+          let val = row[facCodeSourceCol];
+          if (val === undefined || val === null || val === '') {
+            const matchedKey = Object.keys(row).find(k => k.toLowerCase() === targetLower);
+            if (matchedKey) val = row[matchedKey];
+          }
+          return val !== undefined && val !== null ? String(val).trim() : '';
+        })
+        .filter(Boolean);
     }
 
     // ── STEP 1: Buat Physical Table via RPC ──
     setLoading(true);
     let newTabKey = tableId; // fallback jika gagal
+    let etlResult = null;
     try {
       if (facCodes.length > 0) {
-        const result = await facLensService.createEtlTableRpc(facCodes, tableId, outputTitle, fileName);
-        if (result.success && result.tableName) {
-          newTabKey = result.tableName; // Pakai nama tabel yg baru dibuat
+        etlResult = await facLensService.createEtlTableRpc(facCodes, tableId, outputTitle, fileName);
+        if (etlResult.success && etlResult.tableName) {
+          newTabKey = etlResult.tableName; // Pakai nama tabel yg baru dibuat
         }
       }
     } catch (err) {
@@ -361,12 +421,15 @@ export default function App() {
     // Refresh daftar tabel (termasuk yang baru dibuat dari GENERATED_TABLES)
     await loadAvailableTables();
 
+    const matchedCount = etlResult?.matchedCount ?? facCodes.length;
+    const totalInput = etlResult?.totalInput ?? facCodes.length;
+
     // ── STEP 2: Register tab baru & navigasi ke dashboard ──
     const newTableConfig = {
       id: newTabKey,
       label: outputTitle,
       tableName: newTabKey,
-      count: facCodes.length,
+      count: matchedCount,
       columnsCount: 0
     };
     setAvailableTables(prev => {
@@ -394,13 +457,19 @@ export default function App() {
       cedant: currentUploadFile.cedant || '-',
       cob: currentUploadFile.cob || 'Marine Hull',
       status: 'Berhasil Dimuat',
-      records_count: facCodes.length,
+      records_count: matchedCount,
       schema_accuracy: 100.0,
       duration_seconds: 3.5,
-      log_message: `Tabel ETL fisik (${newTabKey}) berhasil dibuat dengan ${facCodes.length} fac_codes.`,
+      log_message: `Tabel ETL fisik (${newTabKey}) berhasil dibuat dengan ${matchedCount} data cocok dari ${totalInput} input.`,
     }).catch(() => {});
     
-    return { newTabKey, outputTitle, facCodesCount: facCodes.length };
+    return { 
+      newTabKey, 
+      outputTitle, 
+      facCodesCount: facCodes.length,
+      matchedCount,
+      totalInput
+    };
   };
 
   // From Recent Output on Dashboard to History Detail
@@ -443,14 +512,14 @@ export default function App() {
         {/* Global background processing banner indicator if running in background */}
         {backgroundProcessing && (
           <div style={{
-            background: 'linear-gradient(90deg, #eff6ff, #f0fdf4)',
-            borderBottom: '1px solid #bfdbfe',
+            background: '#f0fdf4',
+            borderBottom: '1px solid #bbf7d0',
             padding: '10px 32px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             fontSize: '0.82rem',
-            color: '#1e40af'
+            color: '#166534'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{
@@ -461,24 +530,9 @@ export default function App() {
                 boxShadow: '0 0 6px #10b981'
               }} />
               <span>
-                <strong>Pemrosesan Latar Belakang:</strong> Sedang memvalidasi skema berkas <em>{backgroundProcessing.fileName}</em> (Parsing Engine aktif)
+                <strong>Pemrosesan Berkas:</strong> Sedang memvalidasi skema berkas <em>{backgroundProcessing.fileName}</em>
               </span>
             </div>
-            <button
-              onClick={() => setIsAiModalOpen(true)}
-              style={{
-                background: '#ffffff',
-                border: '1px solid #bfdbfe',
-                borderRadius: '6px',
-                padding: '4px 10px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: '#1e40af',
-                cursor: 'pointer'
-              }}
-            >
-              Lihat Progress
-            </button>
           </div>
         )}
 
@@ -511,6 +565,7 @@ export default function App() {
               onExport={handleExportData}
               tabTitles={tabTitles}
               onRenameTab={handleRenameTab}
+              onDeleteTable={handleDeleteTable}
               isExporting={isExporting}
             />
           )}
@@ -523,8 +578,8 @@ export default function App() {
               onCancel={() => handleTabChange('dashboard', '/')}
               onStartParsing={handleStartParsing}
               onNavigateToDashboard={(tabKey, title) => {
-                const targetKey = tabKey || 'ai_parsed';
-                const resolvedTitle = title || currentUploadFile.outputTitle || 'MH - Data Hasil Parsing';
+                const targetKey = tabKey || 'acceptance';
+                const resolvedTitle = title || currentUploadFile.outputTitle || 'Hasil ETL';
                 setTabTitles((prev) => ({
                   ...prev,
                   [targetKey]: resolvedTitle

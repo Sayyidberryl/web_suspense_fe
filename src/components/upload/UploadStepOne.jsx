@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, FileSpreadsheet, ArrowRight, X, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
+import { UploadCloud, FileSpreadsheet, ArrowRight, X, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import mappingService from '../../services/mappingService';
 import '../../styles/upload.css';
 
@@ -20,7 +20,9 @@ export default function UploadStepOne({ onProceedToMapping }) {
 
   const handleFileSelect = async (file) => {
     if (!file) return;
+    const sizeKb = (file.size / 1024).toFixed(1);
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    const formattedSize = file.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
 
     // Parse headers AND all data rows
     const { headers: cols, rows: fileRows } = await mappingService.parseFileData(file);
@@ -34,7 +36,7 @@ export default function UploadStepOne({ onProceedToMapping }) {
 
     setSelectedFile({
       name: file.name,
-      size: `${sizeMb > 0 ? sizeMb : '14.2'} KB`,
+      size: formattedSize,
       fileObject: file,
       columnsCount: finalCols.length,
       fileRows, // <-- simpan semua baris data
@@ -74,48 +76,14 @@ export default function UploadStepOne({ onProceedToMapping }) {
     });
   };
 
-  // Preset 1: Curated Raw Marine Hull Batch for AI Entity Normalization
-  const loadUnparsedBatchFile = () => {
-    // Inject valid fac_codes that exist in the database for the dummy rows
-    const dummyRows = [
-      { fac_code: '22FKAAV8', vesselName: 'TB. Marina 1' },
-      { fac_code: '22FCAB0Y', vesselName: 'BG. Sumber Jaya 2' },
-      { fac_code: '22FNAB5X', vesselName: 'MT. Intan Mas' },
-      { fac_code: '22FNAB5X', vesselName: 'MT. Intan Mas' }, // duplicate to test unique set
-    ];
-    
-    setSelectedFile({
-      name: 'Bordero_MarineHull_Batch_Unparsed.xlsx',
-      size: '14.2 KB',
-      fileObject: null,
-      columnsCount: UNPARSED_10_COLUMNS.length,
-      isAiDemo: true,
-      fileRows: dummyRows // This ensures the ETL process has data to extract
-    });
-    setDetectedColumns(UNPARSED_10_COLUMNS);
-    setOutputTitle('MH - Data Akseptasi');
-    setIsConfirmed(true);
-  };
 
-  // Preset 2: Comprehensive Facultative Export File (179 Columns)
-  const loadMasterExportFile = () => {
-    setSelectedFile({
-      name: 'MR11_Facultative_Export.xlsx',
-      size: '41.4 MB',
-      fileObject: null,
-      columnsCount: 179
-    });
-    setDetectedColumns([]);
-    setOutputTitle('MH - Data Master Ekspor');
-    setIsConfirmed(true);
-  };
 
   return (
     <div className="upload-container">
       {/* Dark Top Banner */}
       <div className="upload-banner-dark">
         <h2>Extract, Transform & Load (ETL)</h2>
-        <p>Unggah berkas mentah untuk divalidasi, diekstrak entitasnya menggunakan Parsing Engine, dan dimuat ke sistem analitik Indore.</p>
+        <p>Unggah berkas mentah untuk divalidasi, diekstrak entitasnya, dan dimuat ke sistem analitik Indore.</p>
       </div>
 
       <div className="upload-grid">

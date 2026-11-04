@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, RefreshCw, Plus, X } from 'lucide-react';
+import { Download, RefreshCw, Plus, X, Trash2 } from 'lucide-react';
 
 /**
  * SheetTabBar — Excel-style sheet tabs for switching DWH tables.
- * Now supports dynamic tabs: opening, closing, and adding new tabs.
+ * Now supports dynamic tabs: opening, closing, renaming, and deleting.
  */
 export default function SheetTabBar({
   tables = [],
@@ -16,6 +16,7 @@ export default function SheetTabBar({
   onExport,
   tabTitles = {},
   onRenameTab,
+  onDeleteTable,
   isExporting = false,
 }) {
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
@@ -63,6 +64,7 @@ export default function SheetTabBar({
           const isActive = tbl.id === selectedTab;
           const currentLabel = (tabTitles && tabTitles[tbl.id]) || tbl.label || tbl.name || tbl.id;
           const isEditing = editingTabId === tbl.id;
+          const isCustomTable = tbl.id.startsWith('etl_out_') || tbl.isEtlOutput;
 
           return (
             <div
@@ -92,6 +94,20 @@ export default function SheetTabBar({
                 >
                   {currentLabel}
                 </span>
+              )}
+
+              {isCustomTable && onDeleteTable && (
+                <button
+                  className="sheet-tab-close-btn"
+                  style={{ color: '#ef4444', marginRight: 2 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteTable(tbl.id);
+                  }}
+                  title="Hapus Tabel dari Database"
+                >
+                  <Trash2 size={12} />
+                </button>
               )}
 
               <button

@@ -19,27 +19,27 @@ export const TABLE_COLUMN_DEFINITIONS = {
     { key: 'vesselName', label: 'Vessel Name', placeholder: 'Nama kapal...' },
     { key: 'vesselCode', label: 'Vessel Code', placeholder: 'Kode kapal...' }
   ],
+  acceptance_merge_okt: [
+    { key: 'facCode', label: 'FAC Code', placeholder: 'Cari fac_code...' },
+    { key: 'companyName', label: 'Cedant Name', placeholder: 'Nama cedant (Direct)...' },
+    { key: 'insuredName', label: 'Insured Name', placeholder: 'Nama tertanggung...' },
+    { key: 'vesselName', label: 'Vessel Name', placeholder: 'Nama kapal...' },
+    { key: 'vesselCode', label: 'Vessel Code', placeholder: 'Kode kapal...' }
+  ],
   loss_sla: [
     { key: 'facCode', label: 'FAC Code', placeholder: 'Cari fac_code...' },
     { key: 'companyName', label: 'Cedant Name', placeholder: 'Nama cedant (Direct)...' },
     { key: 'insuredLossName', label: 'Insured Loss Name', placeholder: 'Nama tertanggung loss...' },
     { key: 'vesselLossName', label: 'Vessel Loss Name', placeholder: 'Nama kapal loss...' },
     { key: 'vesselLossCode', label: 'Vessel Loss Code', placeholder: 'Kode kapal loss...' }
-  ],
-  ai_parsed: [
-    { key: 'facCode', label: 'FAC Code', placeholder: 'Cari fac_code...' },
-    { key: 'vesselName', label: 'Nama Kapal', placeholder: 'Nama kapal...' },
-    { key: 'vesselCode', label: 'Kode Kapal', placeholder: 'Kode kapal...' },
-    { key: 'typeOfVessel', label: 'Type of Vessel', placeholder: 'Tipe kapal...' },
-    { key: 'classification', label: 'Classification', placeholder: 'Klasifikasi...' }
   ]
 };
 
 const DEFAULT_COLUMNS = {
   loss_pla: ['facCode', 'companyName', 'insuredLossName', 'vesselLossName', 'vesselLossCode'],
   acceptance: ['facCode', 'companyName', 'insuredName', 'vesselName', 'vesselCode'],
-  loss_sla: ['facCode', 'companyName', 'insuredLossName', 'vesselLossName', 'vesselLossCode'],
-  ai_parsed: ['facCode', 'vesselName', 'vesselCode', 'typeOfVessel', 'classification']
+  acceptance_merge_okt: ['facCode', 'companyName', 'insuredName', 'vesselName', 'vesselCode'],
+  loss_sla: ['facCode', 'companyName', 'insuredLossName', 'vesselLossName', 'vesselLossCode']
 };
 
 export default function FacLensBanner({

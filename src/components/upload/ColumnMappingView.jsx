@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   ArrowRight,
   RotateCcw,
-  Sparkles,
   CheckCircle2,
   ShieldCheck,
   Plus,
@@ -18,9 +17,9 @@ import mappingService, {
   SYSTEM_TEMPLATES
 } from '../../services/mappingService';
 import facLensService from '../../services/facLensService';
-import AiSettingCard from './AiSettingCard';
-import AiResultPreviewModal from './AiResultPreviewModal';
-import AiParsingLoadingOverlay from './AiParsingLoadingOverlay';
+import EtlResultPreviewModal from './EtlResultPreviewModal';
+import EtlLoadingOverlay from './EtlLoadingOverlay';
+import ParsingEngineCard from './ParsingEngineCard';
 import '../../styles/mapping.css';
 
 export default function ColumnMappingView({
@@ -57,10 +56,10 @@ export default function ColumnMappingView({
   });
   const [customSourceInput, setCustomSourceInput] = useState('');
 
-  // Parsing Engine State
-  const [isAiEnabled, setIsAiEnabled] = useState(true); // Parsing Engine Active
-  const [isProcessingAi, setIsProcessingAi] = useState(false);
-  const [aiParseResult, setAiParseResult] = useState(null);
+  // Processing State
+  const [isEtlEnabled, setIsEtlEnabled] = useState(true);
+  const [isProcessingEtl, setIsProcessingEtl] = useState(false);
+  const [etlResult, setEtlResult] = useState(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
   // Hidden file inputs
@@ -204,10 +203,31 @@ export default function ColumnMappingView({
     e.target.value = '';
   };
 
+  // Auto-match detected columns on mount if available
+  useEffect(() => {
+    if (detectedColumns && detectedColumns.length > 0) {
+      setMappings((prev) => {
+        const hasAnyMapped = prev.some((m) => m.excel_col && m.excel_col !== '-- Pilih Kolom Excel --');
+        if (!hasAnyMapped) {
+          return prev.map((row) => {
+            const bestMatch = mappingService.autoMatchRow(row, selectedTemplateName, detectedColumns);
+            const isMapped = bestMatch !== '-- Pilih Kolom Excel --';
+            return {
+              ...row,
+              excel_col: bestMatch,
+              status: isMapped ? 'mapped' : row.is_optional ? 'optional' : 'unmapped'
+            };
+          });
+        }
+        return prev;
+      });
+    }
+  }, [detectedColumns, selectedTemplateName]);
+
   const handleAutoMatch = () => {
     setMappings((prev) =>
       prev.map((row) => {
-        const bestMatch = mappingService.autoMatchRow(row, selectedTemplateName);
+        const bestMatch = mappingService.autoMatchRow(row, selectedTemplateName, detectedColumns);
         const isMapped = bestMatch !== '-- Pilih Kolom Excel --';
         return {
           ...row,
@@ -249,10 +269,10 @@ export default function ColumnMappingView({
     setTimeout(() => setNotification(''), 3500);
   };
 
-  const handleProcessAiParsing = async (aiConfig) => {
-    setIsProcessingAi(true);
+  const handleProcessEtl = async () => {
+    setIsProcessingEtl(true);
     try {
-      // 1. Run the real ETL lookup, but skip auto-navigation so we can show the modal first
+      // Run the real ETL lookup, but skip auto-navigation so we can show the modal first
       const result = await onStartParsing({
         fileInfo: currentFileInfo,
         mappings,
@@ -261,35 +281,29 @@ export default function ColumnMappingView({
         targetSchema
       }, true); // skipNavigation = true
 
-      // 2. Generate dummy before-after for the modal visual (since parsing is just a gimmick)
-      const dummyResults = Array.from({ length: result?.facCodesCount || 10 }).map((_, i) => ({
-        original_value: `Data Row ${i+1}`,
-        parsed_data: { 
-          'Type of Vessel': ['Tugboat', 'Barge', 'Tanker', 'Bulk Carrier', 'Container'][i % 5],
-          'Classification': ['BKI', 'LR', 'NK', 'ABS', 'BV'][i % 5]
-        }
-      }));
+      const totalInput = result?.totalInput ?? result?.facCodesCount ?? 0;
+      const totalOutput = result?.matchedCount ?? result?.facCodesCount ?? 0;
 
-      setAiParseResult({
-        totalInput: result?.facCodesCount || 10,
-        totalOutput: result?.facCodesCount || 10,
+      setEtlResult({
+        totalInput,
+        totalOutput,
         newTable: result?.newTabKey || 'UNKNOWN_TABLE',
-        targetTable: result?.newTabKey || 'UNKNOWN_TABLE', // ensure GoToDashboard works
-        data: dummyResults
+        targetTable: result?.newTabKey || 'UNKNOWN_TABLE',
+        data: []
       });
       setIsPreviewModalOpen(true);
     } catch (err) {
-      alert('Gagal menjalankan proses Parsing Engine: ' + err.message);
+      alert('Gagal menjalankan proses ETL: ' + err.message);
     } finally {
-      setIsProcessingAi(false);
+      setIsProcessingEtl(false);
     }
   };
 
   const handleGoToDashboard = () => {
     setIsPreviewModalOpen(false);
     if (onNavigateToDashboard) {
-      const generatedTableId = aiParseResult?.targetTable || 'FACUL_ETL_MH_AKSEPTASI';
-      onNavigateToDashboard(generatedTableId, fileInfo.outputTitle || currentFileInfo.outputTitle || 'Hasil Simulasi ETL');
+      const generatedTableId = etlResult?.targetTable || 'FACUL_ETL_MH_AKSEPTASI';
+      onNavigateToDashboard(generatedTableId, fileInfo.outputTitle || currentFileInfo.outputTitle || 'Hasil ETL');
     } else if (onBack) {
       onBack();
     }
@@ -298,17 +312,21 @@ export default function ColumnMappingView({
   const mappedCount = mappings.filter((m) => m.excel_col !== '-- Pilih Kolom Excel --').length;
   const optionalCount = mappings.filter((m) => m.is_optional).length;
 
-  // Available source columns come directly from uploaded file or user additions
-  const availableSourceCols = [
-    '-- Pilih Kolom Excel --',
-    ...detectedColumns
-  ];
+  // Available source columns come directly from uploaded file, user additions, or standard MR11 columns
+  const availableSourceCols = Array.from(
+    new Set([
+      '-- Pilih Kolom Excel --',
+      ...detectedColumns,
+      ...AVAILABLE_EXCEL_COLUMNS.filter((c) => c !== '-- Pilih Kolom Excel --'),
+      ...mappings.map((m) => m.excel_col).filter((c) => c && c !== '-- Pilih Kolom Excel --')
+    ])
+  );
 
   return (
     <div className="mapping-container">
-      {/* Full-screen Loading Overlay for Parsing Engine */}
-      {isProcessingAi && (
-        <AiParsingLoadingOverlay fileInfo={fileInfo} />
+      {/* Full-screen Loading Overlay for ETL Processing */}
+      {isProcessingEtl && (
+        <EtlLoadingOverlay fileInfo={fileInfo} />
       )}
 
       {/* Hidden File Input for Excel Template Import */}
@@ -657,7 +675,7 @@ export default function ColumnMappingView({
               Reset Pemetaan
             </button>
             <button className="btn-secondary-action" onClick={handleAutoMatch}>
-              <Sparkles size={14} style={{ display: 'inline', marginRight: 6, color: '#059669' }} />
+              <CheckCircle2 size={14} style={{ display: 'inline', marginRight: 6, color: '#059669' }} />
               Auto-Match Kolom
             </button>
             <button className="btn-secondary-action" onClick={handleAddRow}>
@@ -672,18 +690,12 @@ export default function ColumnMappingView({
             </button>
             <button
               className="btn-primary-parse"
-              disabled={isProcessing}
+              disabled={isProcessing || isProcessingEtl}
               onClick={async () => {
-                if (isAiEnabled) {
-                  // Direct run parsing engine with current settings
-                  handleProcessAiParsing({
-                    targetColumns: ['Nama Kapal', 'Type of Vessel', 'Code Kapal', 'Size of Vessel', 'Year of Built', 'Type of Material', 'Classification'],
-                    sourceMapping: { 'Type of Vessel': 'fac_risk + fac_desc' },
-                    promptTemplate: 'Proses simulasi.'
-                  });
+                if (isEtlEnabled) {
+                  handleProcessEtl();
                 } else {
                   setIsProcessing(true);
-                  // ETL Flow: teruskan mappings dan fileRows untuk lookup fac_code
                   await onStartParsing({
                     fileInfo: currentFileInfo,
                     mappings,
@@ -691,32 +703,31 @@ export default function ColumnMappingView({
                     templateName: selectedTemplateName,
                     targetSchema
                   }, false);
-                  // We don't need to setIsProcessing(false) because App.jsx will navigate away
                 }
               }}
             >
-              <span>{isProcessing ? 'Memproses...' : (isAiEnabled ? '⚡ Proses Parsing Engine' : 'Simpan & Lanjutkan ETL')}</span>
+              <span>{isProcessing || isProcessingEtl ? 'Memproses...' : (isEtlEnabled ? 'Jalankan Parsing Engine' : 'Simpan & Lanjutkan ETL')}</span>
               <ArrowRight size={16} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* AI SETTING CARD (Positioned Underneath Mapping Table) */}
-      <AiSettingCard
-        isAiEnabled={isAiEnabled}
-        onToggleAi={() => setIsAiEnabled((prev) => !prev)}
-        sourceColumns={detectedColumns}
-        onProcessAi={handleProcessAiParsing}
-        isProcessing={isProcessingAi}
+      {/* Parsing Engine Setting Card (Positioned Underneath Mapping Table) */}
+      <ParsingEngineCard
+        isEnabled={isEtlEnabled}
+        onToggle={() => setIsEtlEnabled((prev) => !prev)}
+        sourceColumns={availableSourceCols}
+        onProcess={handleProcessEtl}
+        isProcessing={isProcessingEtl}
       />
 
-      {/* AI Result Preview Modal with Before vs After Comparison */}
-      <AiResultPreviewModal
+      {/* ETL Result Preview Modal */}
+      <EtlResultPreviewModal
         isOpen={isPreviewModalOpen}
         onClose={() => setIsPreviewModalOpen(false)}
         onGoToDashboard={handleGoToDashboard}
-        resultData={aiParseResult}
+        resultData={etlResult}
       />
     </div>
   );

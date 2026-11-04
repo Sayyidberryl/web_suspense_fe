@@ -33,11 +33,9 @@ export default function DashboardView({
   onExport,
   tabTitles = {},
   onRenameTab,
+  onDeleteTable,
   isExporting = false,
 }) {
-  const isAiParsedTab =
-    selectedTableTab === 'ai_parsed' || selectedTableTab === 'FACUL_ETL_MH_PARSED_AI';
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       {/* ① Sheet Tabs — STATIC, never moves */}
@@ -52,6 +50,7 @@ export default function DashboardView({
         onExport={onExport}
         tabTitles={tabTitles}
         onRenameTab={onRenameTab}
+        onDeleteTable={onDeleteTable}
         isExporting={isExporting}
       />
 
@@ -74,22 +73,18 @@ export default function DashboardView({
       ) : (
         <>
           {/* ② FAC LENS Filter Banner — STATIC, never moves */}
-          {!isAiParsedTab && (
-            <FacLensBanner
-              filters={filters}
-              onFilterChange={onFilterChange}
-              activeTab={selectedTableTab}
-            />
-          )}
+          <FacLensBanner
+            filters={filters}
+            onFilterChange={onFilterChange}
+            activeTab={selectedTableTab}
+          />
 
           {/* Active filter chips (only when filters active) */}
-          {!isAiParsedTab && (
-            <TabNavigation
-              filters={filters}
-              onClearFilters={onClearFilters}
-              onRemoveFilter={onRemoveFilter}
-            />
-          )}
+          <TabNavigation
+            filters={filters}
+            onClearFilters={onClearFilters}
+            onRemoveFilter={onRemoveFilter}
+          />
 
           {/* ③④⑤ Data Table — column header sticky, rows scroll, pagination footer static */}
           <DataTable

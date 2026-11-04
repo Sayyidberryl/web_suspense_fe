@@ -9,19 +9,21 @@ import {
   ChevronRight,
   AlertCircle,
   CheckCircle2,
-  X
+  X,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import historyService from '../../services/historyService';
 import '../../styles/history.css';
 
 export default function HistoryView({ initialFileDetail = null }) {
-  const [viewMode, setViewMode] = useState('card'); // 'card' or 'list' (user requested feature!)
+  const [viewMode, setViewMode] = useState('card'); // 'card' or 'list'
   const [historyList, setHistoryList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(48);
+  const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(9);
-  const [totalPages, setTotalPages] = useState(6);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -30,6 +32,15 @@ export default function HistoryView({ initialFileDetail = null }) {
 
   // Detail modal state
   const [selectedFile, setSelectedFile] = useState(initialFileDetail);
+
+  // Rename modal state
+  const [editingItem, setEditingItem] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Delete modal state
+  const [deletingItem, setDeletingItem] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchHistory = useCallback(async () => {
     setLoading(true);
@@ -42,8 +53,8 @@ export default function HistoryView({ initialFileDetail = null }) {
         limit
       });
       setHistoryList(res.data || []);
-      setTotalCount(res.total || 48);
-      setTotalPages(res.totalPages || Math.ceil((res.total || 48) / limit));
+      setTotalCount(res.total || 0);
+      setTotalPages(res.totalPages || Math.max(1, Math.ceil((res.total || 0) / limit)));
     } catch (err) {
       console.error('Failed to load history:', err);
     } finally {
@@ -54,6 +65,51 @@ export default function HistoryView({ initialFileDetail = null }) {
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
+
+  const handleStartEdit = (e, item) => {
+    e.stopPropagation();
+    setEditingItem(item);
+    setEditTitle(item.file_name);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingItem || !editTitle.trim()) return;
+    setIsUpdating(true);
+    try {
+      await historyService.updateHistory(editingItem.id, { file_name: editTitle.trim() });
+      if (selectedFile && selectedFile.id === editingItem.id) {
+        setSelectedFile((prev) => ({ ...prev, file_name: editTitle.trim() }));
+      }
+      setEditingItem(null);
+      await fetchHistory();
+    } catch (err) {
+      alert('Gagal mengubah nama berkas: ' + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStartDelete = (e, item) => {
+    e.stopPropagation();
+    setDeletingItem(item);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingItem) return;
+    setIsDeleting(true);
+    try {
+      await historyService.deleteHistory(deletingItem.id);
+      if (selectedFile && selectedFile.id === deletingItem.id) {
+        setSelectedFile(null);
+      }
+      setDeletingItem(null);
+      await fetchHistory();
+    } catch (err) {
+      alert('Gagal menghapus riwayat: ' + err.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const getCobClass = (cob) => {
     if (!cob) return 'fire-property';
@@ -83,7 +139,7 @@ export default function HistoryView({ initialFileDetail = null }) {
             <input
               type="text"
               className="history-search-input"
-              placeholder="Cari nama file, atau cedant..."
+              placeholder="Cari nama berkas, atau cedant..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -102,6 +158,7 @@ export default function HistoryView({ initialFileDetail = null }) {
             }}
           >
             <option value="Semua Tipe COB">Semua Kategori (COB)</option>
+            <option value="Marine Hull">Marine Hull</option>
             <option value="Fire & Property">Fire & Property</option>
             <option value="Marine Cargo">Marine Cargo</option>
             <option value="Engineering">Engineering</option>
@@ -123,12 +180,6 @@ export default function HistoryView({ initialFileDetail = null }) {
             <option value="Gagal Skema">Gagal Skema</option>
           </select>
 
-          {/* Date Range Button */}
-          <button className="btn-filter-icon" onClick={() => alert('Fitur rentang waktu tanggal')}>
-            <Calendar size={14} />
-            <span>Rentang Waktu</span>
-          </button>
-
           {/* Refresh Button */}
           <button
             className="btn-refresh-history"
@@ -139,7 +190,7 @@ export default function HistoryView({ initialFileDetail = null }) {
           </button>
         </div>
 
-        {/* User Request: View Toggle Button (Card or List) */}
+        {/* View Toggle Button (Card or List) */}
         <div className="view-toggle-group">
           <button
             className={`btn-view-toggle ${viewMode === 'card' ? 'active' : ''}`}
@@ -160,9 +211,16 @@ export default function HistoryView({ initialFileDetail = null }) {
         </div>
       </div>
 
+      {/* Content Area: Card Grid vs List Table */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#64748b' }}>
-          Memuat riwayat berkas...
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '260px',
+          color: '#64748b'
+        }}>
+          Memuat riwayat eksekusi ETL...
         </div>
       ) : historyList.length === 0 ? (
         <div style={{
@@ -184,7 +242,7 @@ export default function HistoryView({ initialFileDetail = null }) {
             const isError = item.status === 'Gagal Skema';
 
             return (
-              <div key={item.id} className="history-card">
+              <div key={item.id} className="history-card" onClick={() => setSelectedFile(item)} style={{ cursor: 'pointer' }}>
                 <div className="history-card-header">
                   <div className="file-pill-tag-group">
                     <span className="badge-tag-xlsx">{item.file_type || 'XLSX'}</span>
@@ -195,7 +253,42 @@ export default function HistoryView({ initialFileDetail = null }) {
                   </span>
                 </div>
 
-                <h4 className="history-card-title">{item.file_name}</h4>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                  <h4 className="history-card-title" style={{ flex: 1 }}>{item.file_name}</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <button
+                      className="btn-action-icon"
+                      title="Ubah Judul"
+                      onClick={(e) => handleStartEdit(e, item)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 4,
+                        color: '#64748b',
+                        borderRadius: 4
+                      }}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      className="btn-action-icon"
+                      title="Hapus Riwayat"
+                      onClick={(e) => handleStartDelete(e, item)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 4,
+                        color: '#ef4444',
+                        borderRadius: 4
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+
                 <p className="history-card-cedant">Cedant: {item.cedant}</p>
 
                 <div className="history-card-date-box">
@@ -211,7 +304,10 @@ export default function HistoryView({ initialFileDetail = null }) {
 
                   <button
                     className={`btn-card-detail ${isError ? 'log-error' : ''}`}
-                    onClick={() => setSelectedFile(item)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFile(item);
+                    }}
                   >
                     <span>{isError ? 'Log Galat' : 'Detail'}</span>
                     <ChevronRight size={14} />
@@ -222,7 +318,7 @@ export default function HistoryView({ initialFileDetail = null }) {
           })}
         </div>
       ) : (
-        /* LIST VIEW (User Request Feature!) */
+        /* LIST VIEW */
         <div className="history-list-card">
           <table className="history-table">
             <thead>
@@ -262,14 +358,48 @@ export default function HistoryView({ initialFileDetail = null }) {
                     </td>
                     <td style={{ color: '#64748b' }}>{item.date_display}</td>
                     <td style={{ textAlign: 'right' }}>
-                      <button
-                        className={`btn-card-detail ${isError ? 'log-error' : ''}`}
-                        onClick={() => setSelectedFile(item)}
-                        style={{ display: 'inline-flex' }}
-                      >
-                        <span>{isError ? 'Log Galat' : 'Detail'}</span>
-                        <ChevronRight size={14} />
-                      </button>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                          title="Ubah Judul"
+                          onClick={(e) => handleStartEdit(e, item)}
+                          style={{
+                            background: '#f1f5f9',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: 6,
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            color: '#475569',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          title="Hapus"
+                          onClick={(e) => handleStartDelete(e, item)}
+                          style={{
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: 6,
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            color: '#dc2626',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                        <button
+                          className={`btn-card-detail ${isError ? 'log-error' : ''}`}
+                          onClick={() => setSelectedFile(item)}
+                          style={{ display: 'inline-flex' }}
+                        >
+                          <span>{isError ? 'Log Galat' : 'Detail'}</span>
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -342,7 +472,100 @@ export default function HistoryView({ initialFileDetail = null }) {
         </div>
       </div>
 
-      {/* Detail Modal / Log Galat Viewer */}
+      {/* Edit Title Modal */}
+      {editingItem && (
+        <div className="modal-overlay" onClick={() => setEditingItem(null)}>
+          <div className="modal-content-card" style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-row">
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                Ubah Judul / Nama Berkas
+              </h3>
+              <button className="btn-close-modal" onClick={() => setEditingItem(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ margin: '18px 0' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+                Nama Berkas / Judul Proses
+              </label>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveEdit();
+                  if (e.key === 'Escape') setEditingItem(null);
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button className="btn-secondary-action" onClick={() => setEditingItem(null)}>
+                Batal
+              </button>
+              <button
+                className="btn-primary-next"
+                style={{ width: 'auto', padding: '8px 18px' }}
+                onClick={handleSaveEdit}
+                disabled={isUpdating}
+              >
+                {isUpdating ? 'Menyimpan...' : 'Simpan Perubahan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingItem && (
+        <div className="modal-overlay" onClick={() => setDeletingItem(null)}>
+          <div className="modal-content-card" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-row">
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#dc2626', margin: 0 }}>
+                Konfirmasi Hapus
+              </h3>
+              <button className="btn-close-modal" onClick={() => setDeletingItem(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <p style={{ fontSize: '0.88rem', color: '#475569', margin: '16px 0' }}>
+              Apakah Anda yakin ingin menghapus catatan riwayat <strong>{deletingItem.file_name}</strong>? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button className="btn-secondary-action" onClick={() => setDeletingItem(null)}>
+                Batal
+              </button>
+              <button
+                style={{
+                  background: '#dc2626',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '8px 18px',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal / Log Viewer */}
       {selectedFile && (
         <div className="modal-overlay" onClick={() => setSelectedFile(null)}>
           <div className="modal-content-card" onClick={(e) => e.stopPropagation()}>
@@ -383,11 +606,11 @@ export default function HistoryView({ initialFileDetail = null }) {
               </div>
               <div className="meta-item">
                 <label>Jumlah Baris Data</label>
-                <span>{(selectedFile.records_count || 48250).toLocaleString()} Baris</span>
+                <span>{(selectedFile.records_count ?? 0).toLocaleString()} Baris</span>
               </div>
               <div className="meta-item">
                 <label>Akurasi Skema</label>
-                <span>{selectedFile.schema_accuracy || 99.8}%</span>
+                <span>{selectedFile.schema_accuracy ?? 100.0}%</span>
               </div>
             </div>
 
@@ -396,25 +619,45 @@ export default function HistoryView({ initialFileDetail = null }) {
             </h4>
             <div className="log-box">
               {selectedFile.log_message ||
-                `[${selectedFile.date_display}] Berkas berhasil diproses melalui pipeline ETL Indore. Schema mapping valid.`}
+                `[${selectedFile.date_display}] Berkas berhasil diproses melalui pipeline ETL. Skema valid.`}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  className="btn-secondary-action"
+                  onClick={(e) => handleStartEdit(e, selectedFile)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Pencil size={13} />
+                  <span>Ubah Judul</span>
+                </button>
+                <button
+                  style={{
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    color: '#dc2626',
+                    borderRadius: 6,
+                    padding: '6px 12px',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                  onClick={(e) => handleStartDelete(e, selectedFile)}
+                >
+                  <Trash2 size={13} />
+                  <span>Hapus</span>
+                </button>
+              </div>
+
               <button
                 className="btn-secondary-action"
                 onClick={() => setSelectedFile(null)}
               >
                 Tutup
-              </button>
-              <button
-                className="btn-primary-next"
-                style={{ width: 'auto', padding: '8px 18px' }}
-                onClick={() => {
-                  alert(`Mengunduh laporan audit untuk ${selectedFile.file_name}`);
-                  setSelectedFile(null);
-                }}
-              >
-                Unduh Log Audit
               </button>
             </div>
           </div>

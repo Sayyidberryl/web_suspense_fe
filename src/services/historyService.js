@@ -51,6 +51,69 @@ export const historyService = {
       console.error(`Failed to fetch history detail for id ${id}:`, err);
       return null;
     }
+  },
+
+  /**
+   * Update existing history record (e.g. edit title/filename)
+   */
+  async updateHistory(id, { file_name, status, log_message }) {
+    try {
+      const res = await apiClient.patch(`/api/history/${id}`, { file_name, status, log_message });
+      return res;
+    } catch (err) {
+      console.warn('Backend updateHistory failed, attempting direct Supabase update:', err);
+      try {
+        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://uaoysegountarjanafbb.supabase.co';
+        const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhb3lzZWdvdW50YXJqYW5hZmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNDQzNzUsImV4cCI6MjEwNTYyMDM3NX0.j6y0DQ1RflMJsiUiGSyADnvjkGDQttTH4Vq5HIM2xJo';
+        const patchData = {};
+        if (file_name !== undefined) patchData.file_name = file_name;
+        if (status !== undefined) patchData.status = status;
+        if (log_message !== undefined) patchData.log_message = log_message;
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/etl_history?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=representation'
+          },
+          body: JSON.stringify(patchData)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return { success: true };
+      } catch (sbErr) {
+        console.error('Supabase direct update error:', sbErr);
+        throw sbErr;
+      }
+    }
+  },
+
+  /**
+   * Delete history record
+   */
+  async deleteHistory(id) {
+    try {
+      const res = await apiClient.delete(`/api/history/${id}`);
+      return res;
+    } catch (err) {
+      console.warn('Backend deleteHistory failed, attempting direct Supabase delete:', err);
+      try {
+        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://uaoysegountarjanafbb.supabase.co';
+        const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhb3lzZWdvdW50YXJqYW5hZmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNDQzNzUsImV4cCI6MjEwNTYyMDM3NX0.j6y0DQ1RflMJsiUiGSyADnvjkGDQttTH4Vq5HIM2xJo';
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/etl_history?id=eq.${id}`, {
+          method: 'DELETE',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+          }
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return { success: true };
+      } catch (sbErr) {
+        console.error('Supabase direct delete error:', sbErr);
+        throw sbErr;
+      }
+    }
   }
 };
 
