@@ -213,8 +213,8 @@ export const facLensService = {
     }
     const tableName = cfg.tableName;
     // Fast initial batch (100 rows) loads in ~0.4s and avoids Supabase HTTP 504 Gateway Timeout
-    const safeLimit = limit === 'all' ? 100 : limit;
-    const offset = limit === 'all' ? 0 : (page - 1) * limit;
+    const safeLimit = (limit === 'all' || !Number.isFinite(Number(limit)) || Number(limit) <= 0) ? 100 : Number(limit);
+    const offset = (limit === 'all') ? 0 : (page - 1) * safeLimit;
 
     const filterQuery = buildFilterParams(tab, filters);
     const paginationClause = `limit=${safeLimit}&offset=${offset}`;
@@ -236,7 +236,11 @@ export const facLensService = {
     };
 
     try {
-      const res = await fetch(url, { headers: requestHeaders });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
+
+      const res = await fetch(url, { headers: requestHeaders, signal: controller.signal });
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         const errText = await res.text();
@@ -257,7 +261,7 @@ export const facLensService = {
         total,
         page,
         limit,
-        totalPages: Math.max(1, Math.ceil(total / limit)),
+        totalPages: Math.max(1, Math.ceil(total / safeLimit)),
         tableName,
         tableId: tab,
         error: null,
@@ -326,7 +330,7 @@ export const facLensService = {
 
     try {
       const filterQuery = buildFilterParams(tableId, filters);
-      const queryParts = ['select=*', 'limit=5000', 'order=id.asc', filterQuery].filter(Boolean);
+      const queryParts = ['select=*', 'limit=5000', filterQuery].filter(Boolean);
       const url = `${SUPABASE_URL}/rest/v1/${cfg.tableName}?${queryParts.join('&')}`;
       const res = await fetch(url, { headers: SUPABASE_HEADERS });
       const data = await res.json();
@@ -386,7 +390,7 @@ export const facLensService = {
         rowsToExport = inMemoryData;
       } else {
         const filterQuery = buildFilterParams(tableId, filters);
-        const queryParts = ['select=*', 'limit=5000', 'order=id.asc', filterQuery].filter(Boolean);
+        const queryParts = ['select=*', 'limit=5000', filterQuery].filter(Boolean);
         const url = `${SUPABASE_URL}/rest/v1/${cfg.tableName}?${queryParts.join('&')}`;
         const res = await fetch(url, { headers: SUPABASE_HEADERS });
         if (res.ok) {

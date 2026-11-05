@@ -211,11 +211,14 @@ export default function App() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      const currentPage = pagination.page || 1;
+      const currentLimit = pagination.limit || 25;
+
       const response = await facLensService.getTableData({
         tab: selectedTableTab,
         filters,
-        page: 1,
-        limit: 'all'
+        page: currentPage,
+        limit: currentLimit,
       });
 
       if (response.error) {
@@ -230,7 +233,7 @@ export default function App() {
         setPagination((prev) => ({
           ...prev,
           total: response.total || 0,
-          totalPages: response.totalPages || 1
+          totalPages: response.totalPages || 1,
         }));
       });
     } catch (err) {
