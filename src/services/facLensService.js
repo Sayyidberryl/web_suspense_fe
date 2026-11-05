@@ -180,38 +180,23 @@ export const facLensService = {
       );
       if (genRes.ok) {
         const genData = await genRes.json();
-        dynamicTables = genData.map(g => ({
+        dynamicTables = genData.map((g) => ({
           id: g.table_name,
           tableName: g.table_name,
           label: g.label || g.table_name,
           fullLabel: g.label || g.table_name,
           description: g.description,
           source_table: g.source_table,
-          isEtlOutput: true
+          count: g.row_count || 0,
+          isEtlOutput: true,
         }));
       }
     } catch (err) {
       console.warn('Could not fetch generated_tables', err);
     }
 
-    const allConfigs = [...TABLE_CONFIG, ...dynamicTables];
-
-    const results = await Promise.all(
-      allConfigs.map(async (cfg) => {
-        try {
-          const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/${cfg.tableName}?select=id&limit=1`,
-            { headers: SUPABASE_HEADERS }
-          );
-          const cr = res.headers.get('content-range') || '';
-          const total = cr.includes('/') ? parseInt(cr.split('/')[1], 10) : 0;
-          return { ...cfg, count: total, columnsCount: 0 };
-        } catch {
-          return { ...cfg, count: 0, columnsCount: 0 };
-        }
-      })
-    );
-    return results;
+    // Static tables have instant cached counts in TABLE_CONFIG — no heavy parallel queries needed
+    return [...TABLE_CONFIG, ...dynamicTables];
   },
 
   /**
@@ -227,18 +212,17 @@ export const facLensService = {
       cfg = { id: tab, tableName: tab, label: tab, fullLabel: tab };
     }
     const tableName = cfg.tableName;
-    // Fast initial batch (200 rows) loads in <0.5s and avoids Supabase HTTP 504 Gateway Timeout
-    const safeLimit = limit === 'all' ? 200 : limit;
+    // Fast initial batch (100 rows) loads in ~0.4s and avoids Supabase HTTP 504 Gateway Timeout
+    const safeLimit = limit === 'all' ? 100 : limit;
     const offset = limit === 'all' ? 0 : (page - 1) * limit;
 
     const filterQuery = buildFilterParams(tab, filters);
-    const orderClause = 'order=id.asc';
     const paginationClause = `limit=${safeLimit}&offset=${offset}`;
 
+    // Do NOT include order=id.asc on huge unindexed tables (200k+ rows) to avoid full in-memory sorting
     const queryParts = [
       'select=*',
       paginationClause,
-      orderClause,
       filterQuery,
     ].filter(Boolean);
 
