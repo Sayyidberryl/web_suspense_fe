@@ -212,9 +212,12 @@ export const facLensService = {
    * Supports both static TABLE_CONFIG entries and dynamic ETL output tables.
    * Returns full columns (no hardcoding), inferred from the first row.
    */
-  async getTableData({ tab = 'acceptance', filters = {}, page = 1, limit = 25 } = {}) {
+  async getTableData({ tab = 'acceptance', filters = {}, page = 1, limit = 50 } = {}) {
+    const safeLimit = (limit === 'all' || !Number.isFinite(Number(limit)) || Number(limit) <= 0) ? 50 : Math.min(Number(limit), 200);
+    const offset = (limit === 'all') ? 0 : (page - 1) * safeLimit;
+
     // 1. Check in-memory cache first for instant sub-millisecond response
-    const cacheKey = getCacheKey(tab, filters, page, limit);
+    const cacheKey = getCacheKey(tab, filters, page, safeLimit);
     const cached = DATA_CACHE.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
       return { ...cached.data, error: null };
@@ -227,9 +230,6 @@ export const facLensService = {
       cfg = { id: tab, tableName: tab, label: tab, fullLabel: tab, count: 0 };
     }
     const tableName = cfg.tableName;
-    // Fast batch (default 25 rows, max 100) loads in <0.3s
-    const safeLimit = (limit === 'all' || !Number.isFinite(Number(limit)) || Number(limit) <= 0) ? 100 : Math.min(Number(limit), 200);
-    const offset = (limit === 'all') ? 0 : (page - 1) * safeLimit;
 
     const filterQuery = buildFilterParams(tab, filters);
     const paginationClause = `limit=${safeLimit}&offset=${offset}`;

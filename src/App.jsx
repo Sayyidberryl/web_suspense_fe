@@ -58,12 +58,12 @@ export default function App() {
 
   const [isExporting, setIsExporting] = useState(false);
 
-  // Dynamic Pagination
+  // Dynamic Pagination — default 50 rows per page
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25,
-    total: 0,
-    totalPages: 1,
+    limit: 50,
+    total: 202578,
+    totalPages: 4052,
     isAll: false
   });
 
@@ -212,7 +212,7 @@ export default function App() {
     setLoading(true);
     try {
       const currentPage = pagination.page || 1;
-      const currentLimit = pagination.limit || 25;
+      const currentLimit = pagination.limit || 50;
 
       const response = await facLensService.getTableData({
         tab: selectedTableTab,

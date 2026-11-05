@@ -64,7 +64,7 @@
   cursor: pointer;
 }
 
-/* Pagination */
+/* Pagination Bar is visible and positioned below table */
 .table-pagination-bar {
-  display: none; /* Minimalistic table styling */
+  display: flex;
 }
