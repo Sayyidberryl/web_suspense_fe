@@ -251,7 +251,7 @@ export const facLensService = {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4500); // 4.5s fast timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
       const res = await fetch(url, { headers: requestHeaders, signal: controller.signal });
       clearTimeout(timeoutId);
@@ -298,7 +298,8 @@ export const facLensService = {
         if (base.endsWith('/api')) base = base.slice(0, -4);
 
         const params = new URLSearchParams({
-          tab,
+          table: tab,
+          tab: tab,
           page: String(page),
           limit: String(safeLimit),
         });
@@ -588,6 +589,13 @@ export const facLensService = {
       if (!res2.ok) throw new Error(`Supabase delete failed: ${await res2.text()}`);
       return { success: true };
     }
+  },
+
+  /**
+   * Clear in-memory response cache
+   */
+  clearCache() {
+    DATA_CACHE.clear();
   },
 };
 

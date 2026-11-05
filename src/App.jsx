@@ -310,6 +310,9 @@ export default function App() {
 
   const handleSelectTableTab = (newTab) => {
     setSelectedTableTab(newTab);
+    setTableData([]);
+    setTableColumns([]);
+    setLoading(true);
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
