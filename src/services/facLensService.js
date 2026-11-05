@@ -134,41 +134,71 @@ function buildFilterParams(tableId, filters = {}) {
   const parts = [];
 
   const addIlike = (col, val) => {
-    if (val && val.trim()) {
-      parts.push(`${col}=ilike.%25${encodeURIComponent(val.trim())}%25`);
+    if (val && typeof val === 'string' && val.trim()) {
+      parts.push(`${col}=ilike.*${encodeURIComponent(val.trim())}*`);
     }
   };
 
-  // Common filters
+  // Common filters across tables
   addIlike('fac_code', filters.facCode);
   addIlike('broker', filters.broker);
   addIlike('currency', filters.currency);
   addIlike('loss_cause', filters.lossCause);
-  if (filters.dateOfLoss && filters.dateOfLoss.trim()) {
+  if (filters.dateOfLoss && typeof filters.dateOfLoss === 'string' && filters.dateOfLoss.trim()) {
     parts.push(`date_of_loss=eq.${encodeURIComponent(filters.dateOfLoss.trim())}`);
   }
 
-  const isAcceptance = tableId === 'acceptance' || tableId === 'acceptance_merge_okt' || tableId === 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT' || tableId.startsWith('etl_out_'); // Fallback to acceptance if dynamic table
-  
-  if (isAcceptance) {
-    addIlike('direct', filters.companyName);
-    addIlike('nama_tertanggung', filters.insuredName);
-    addIlike('nama_kapal', filters.vesselName);
-    addIlike('code_kapal', filters.vesselCode);
-    addIlike('acceptance_status', filters.status);
-    // global search across key columns
-    if (filters.globalSearch && filters.globalSearch.trim()) {
-      addIlike('fac_code', filters.globalSearch);
+  // Cedant (direct) - exists as 'direct' in all 4 tables
+  const cedantVal = (filters.companyName || filters.direct || '').trim();
+  if (cedantVal) {
+    parts.push(`direct=ilike.*${encodeURIComponent(cedantVal)}*`);
+  }
+
+  // Vessel Name - exists as 'nama_kapal' in all 4 tables
+  const vesselNameVal = (filters.vesselName || filters.vesselLossName || '').trim();
+  if (vesselNameVal) {
+    parts.push(`nama_kapal=ilike.*${encodeURIComponent(vesselNameVal)}*`);
+  }
+
+  // Vessel Code - exists as 'code_kapal' in all 4 tables
+  const vesselCodeVal = (filters.vesselCode || filters.vesselLossCode || '').trim();
+  if (vesselCodeVal) {
+    parts.push(`code_kapal=ilike.*${encodeURIComponent(vesselCodeVal)}*`);
+  }
+
+  const isAcceptance = tableId === 'acceptance' || tableId === 'acceptance_merge_okt' || tableId === 'FACUL_ETL_MH_AKSEPTASI_MERGE_OKT' || tableId.startsWith('etl_out_');
+
+  // Insured Name
+  const insuredVal = (filters.insuredName || filters.insuredLossName || '').trim();
+  if (insuredVal) {
+    const encodedVal = encodeURIComponent(insuredVal);
+    if (isAcceptance) {
+      parts.push(`nama_tertanggung=ilike.*${encodedVal}*`);
+    } else {
+      // In Loss PLA and Loss SLA tables, nama_tertanggung has 202k non-null rows while nama_tertanggung_loss has 6k rows.
+      // Search both columns using PostgREST OR filter so no matching records are missed.
+      parts.push(`or=(nama_tertanggung.ilike.*${encodedVal}*,nama_tertanggung_loss.ilike.*${encodedVal}*)`);
     }
-  } else {
-    // loss_pla / loss_sla
-    addIlike('direct', filters.companyName);
-    addIlike('nama_tertanggung_loss', filters.insuredLossName);
-    addIlike('nama_kapal', filters.vesselLossName);
-    addIlike('code_kapal', filters.vesselLossCode);
-    addIlike('settled_or_os', filters.status);
-    if (filters.globalSearch && filters.globalSearch.trim()) {
-      addIlike('fac_code', filters.globalSearch);
+  }
+
+  // Status Filter
+  const statusVal = (filters.status || '').trim();
+  if (statusVal && statusVal !== 'Semua' && statusVal !== 'Status: Semua') {
+    const encodedStatus = encodeURIComponent(statusVal);
+    if (isAcceptance) {
+      parts.push(`acceptance_status=ilike.*${encodedStatus}*`);
+    } else {
+      parts.push(`settled_or_os=ilike.*${encodedStatus}*`);
+    }
+  }
+
+  // Global search across key columns
+  if (filters.globalSearch && typeof filters.globalSearch === 'string' && filters.globalSearch.trim()) {
+    const gSearch = encodeURIComponent(filters.globalSearch.trim());
+    if (isAcceptance) {
+      parts.push(`or=(fac_code.ilike.*${gSearch}*,nama_kapal.ilike.*${gSearch}*,direct.ilike.*${gSearch}*,nama_tertanggung.ilike.*${gSearch}*)`);
+    } else {
+      parts.push(`or=(fac_code.ilike.*${gSearch}*,nama_kapal.ilike.*${gSearch}*,direct.ilike.*${gSearch}*,nama_tertanggung.ilike.*${gSearch}*,nama_tertanggung_loss.ilike.*${gSearch}*)`);
     }
   }
 
@@ -304,8 +334,11 @@ export const facLensService = {
           limit: String(safeLimit),
         });
         if (filters.facCode) params.append('fac_code', filters.facCode);
-        if (filters.companyName) params.append('company_name', filters.companyName);
-        if (filters.vesselName) params.append('vessel_name', filters.vesselName);
+        if (filters.companyName || filters.direct) params.append('company_name', filters.companyName || filters.direct);
+        if (filters.vesselName || filters.vesselLossName) params.append('vessel_name', filters.vesselName || filters.vesselLossName);
+        if (filters.vesselCode || filters.vesselLossCode) params.append('vessel_code', filters.vesselCode || filters.vesselLossCode);
+        if (filters.insuredName || filters.insuredLossName) params.append('insured_name', filters.insuredName || filters.insuredLossName);
+        if (filters.status) params.append('status', filters.status);
 
         const backendController = new AbortController();
         const backendTimeout = setTimeout(() => backendController.abort(), 6000); // 6s backend timeout

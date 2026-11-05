@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useTransition } from 'react';
+import React, { useState, useEffect, useCallback, useTransition, useRef } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import DashboardView from './components/dashboard/DashboardView';
@@ -76,7 +76,9 @@ export default function App() {
     insuredName: '',
     insuredLossName: '',
     vesselName: '',
+    vesselLossName: '',
     vesselCode: '',
+    vesselLossCode: '',
     status: '',
     lossCause: '',
     currency: '',
@@ -210,7 +212,11 @@ export default function App() {
     }
   };
 
+  // Tracking request ID to prevent race conditions when typing or switching tabs quickly
+  const requestIdRef = useRef(0);
+
   const loadData = useCallback(async () => {
+    const currentRequestId = ++requestIdRef.current;
     setLoading(true);
     try {
       const response = await facLensService.getTableData({
@@ -219,6 +225,11 @@ export default function App() {
         page: 1,
         limit: 50,
       });
+
+      // Discard stale out-of-order responses if a newer request was dispatched
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
 
       if (response.error) {
         setConnectionError(response.error);
@@ -239,15 +250,20 @@ export default function App() {
         }));
       });
     } catch (err) {
-      console.error('Failed to load table data:', err);
+      if (currentRequestId === requestIdRef.current) {
+        console.error('Failed to load table data:', err);
+      }
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [selectedTableTab, filters]);
 
   // Seamless background pagination: loads next 50 rows when scrolling near bottom
   const loadMore = useCallback(async () => {
     if (loading || isLoadingMore || !hasMore) return;
+    const currentRequestId = requestIdRef.current;
     setIsLoadingMore(true);
     try {
       const nextPage = Math.floor(tableData.length / 50) + 1;
@@ -257,6 +273,10 @@ export default function App() {
         page: nextPage,
         limit: 50,
       });
+
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
 
       const newRows = response.data || [];
       if (newRows.length > 0) {
@@ -268,9 +288,13 @@ export default function App() {
         setHasMore(false);
       }
     } catch (err) {
-      console.warn('Auto background load failed:', err);
+      if (currentRequestId === requestIdRef.current) {
+        console.warn('Auto background load failed:', err);
+      }
     } finally {
-      setIsLoadingMore(false);
+      if (currentRequestId === requestIdRef.current) {
+        setIsLoadingMore(false);
+      }
     }
   }, [loading, isLoadingMore, hasMore, tableData.length, selectedTableTab, filters]);
 
@@ -281,7 +305,23 @@ export default function App() {
   }, [activeTab, loadData]);
 
   const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
+    setFilters((prev) => {
+      const updated = { ...prev, [field]: value };
+      // Keep equivalent keys synchronized across table tab views
+      if (field === 'vesselName' || field === 'vesselLossName') {
+        updated.vesselName = value;
+        updated.vesselLossName = value;
+      }
+      if (field === 'vesselCode' || field === 'vesselLossCode') {
+        updated.vesselCode = value;
+        updated.vesselLossCode = value;
+      }
+      if (field === 'insuredName' || field === 'insuredLossName') {
+        updated.insuredName = value;
+        updated.insuredLossName = value;
+      }
+      return updated;
+    });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
@@ -294,7 +334,9 @@ export default function App() {
       insuredName: '',
       insuredLossName: '',
       vesselName: '',
+      vesselLossName: '',
       vesselCode: '',
+      vesselLossCode: '',
       status: '',
       lossCause: '',
       currency: '',
@@ -304,7 +346,22 @@ export default function App() {
   };
 
   const handleRemoveFilter = (key) => {
-    setFilters((prev) => ({ ...prev, [key]: '' }));
+    setFilters((prev) => {
+      const updated = { ...prev, [key]: '' };
+      if (key === 'vesselName' || key === 'vesselLossName') {
+        updated.vesselName = '';
+        updated.vesselLossName = '';
+      }
+      if (key === 'vesselCode' || key === 'vesselLossCode') {
+        updated.vesselCode = '';
+        updated.vesselLossCode = '';
+      }
+      if (key === 'insuredName' || key === 'insuredLossName') {
+        updated.insuredName = '';
+        updated.insuredLossName = '';
+      }
+      return updated;
+    });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 

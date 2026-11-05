@@ -6,10 +6,15 @@ export default function TabNavigation({
   onClearFilters,
   onRemoveFilter
 }) {
-  // Active filter keys
+  // Active filter keys (deduplicating equivalent pairs)
   const activeFilters = Object.entries(filters).filter(([key, val]) => {
     if (key === 'selectedFile') return false;
-    return Boolean(val && typeof val === 'string' && val.trim());
+    if (!val || typeof val !== 'string' || !val.trim()) return false;
+    // Don't show redundant duplicate chip for equivalent keys
+    if (key === 'vesselLossName' && filters.vesselName && filters.vesselName.trim() === val.trim()) return false;
+    if (key === 'vesselLossCode' && filters.vesselCode && filters.vesselCode.trim() === val.trim()) return false;
+    if (key === 'insuredLossName' && filters.insuredName && filters.insuredName.trim() === val.trim()) return false;
+    return true;
   });
 
   const filterLabels = {
@@ -21,7 +26,9 @@ export default function TabNavigation({
     insuredName: 'Tertanggung',
     insuredLossName: 'Tertanggung Loss',
     vesselName: 'Nama Kapal',
+    vesselLossName: 'Nama Kapal (Loss)',
     vesselCode: 'Kode Kapal',
+    vesselLossCode: 'Kode Kapal (Loss)',
     lossCause: 'Penyebab Klaim',
     dateOfLoss: 'Tgl Klaim',
     currency: 'Mata Uang',

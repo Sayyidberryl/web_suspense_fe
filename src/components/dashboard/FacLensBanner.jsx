@@ -53,6 +53,64 @@ export default function FacLensBanner({
     return DEFAULT_COLUMNS[activeTab] || availableColumns.slice(0, 5).map((c) => c.key);
   });
 
+  // Local state for smooth, instant typing without waiting for server response
+  const [localValues, setLocalValues] = useState(filters);
+  const debounceTimerRef = useRef({});
+
+  // Sync local values when filters prop changes (e.g. from Clear Filters or Chip remove)
+  useEffect(() => {
+    setLocalValues(filters);
+  }, [filters]);
+
+  const getDisplayValue = (colKey) => {
+    if (colKey === 'vesselName' || colKey === 'vesselLossName') {
+      return localValues.vesselLossName || localValues.vesselName || filters.vesselLossName || filters.vesselName || '';
+    }
+    if (colKey === 'vesselCode' || colKey === 'vesselLossCode') {
+      return localValues.vesselLossCode || localValues.vesselCode || filters.vesselLossCode || filters.vesselCode || '';
+    }
+    if (colKey === 'insuredName' || colKey === 'insuredLossName') {
+      return localValues.insuredLossName || localValues.insuredName || filters.insuredLossName || filters.insuredName || '';
+    }
+    return localValues[colKey] !== undefined ? localValues[colKey] : (filters[colKey] || '');
+  };
+
+  const handleInputChange = (colKey, val) => {
+    setLocalValues((prev) => {
+      const next = { ...prev, [colKey]: val };
+      if (colKey === 'vesselName' || colKey === 'vesselLossName') {
+        next.vesselName = val;
+        next.vesselLossName = val;
+      }
+      if (colKey === 'vesselCode' || colKey === 'vesselLossCode') {
+        next.vesselCode = val;
+        next.vesselLossCode = val;
+      }
+      if (colKey === 'insuredName' || colKey === 'insuredLossName') {
+        next.insuredName = val;
+        next.insuredLossName = val;
+      }
+      return next;
+    });
+
+    if (debounceTimerRef.current[colKey]) {
+      clearTimeout(debounceTimerRef.current[colKey]);
+    }
+
+    debounceTimerRef.current[colKey] = setTimeout(() => {
+      onFilterChange(colKey, val);
+    }, 350);
+  };
+
+  const handleKeyDown = (colKey, e) => {
+    if (e.key === 'Enter') {
+      if (debounceTimerRef.current[colKey]) {
+        clearTimeout(debounceTimerRef.current[colKey]);
+      }
+      onFilterChange(colKey, getDisplayValue(colKey));
+    }
+  };
+
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -125,8 +183,8 @@ export default function FacLensBanner({
             label: colKey,
             placeholder: `Filter ${colKey}...`
           };
-          const val = filters[colKey] || '';
-          const hasVal = Boolean(val && val.trim());
+          const val = getDisplayValue(colKey);
+          const hasVal = Boolean(val && String(val).trim());
 
           return (
             <div key={colKey} className={`banner-filter-group ${hasVal ? 'has-value' : ''}`}>
@@ -136,7 +194,8 @@ export default function FacLensBanner({
                 className="banner-filter-input"
                 placeholder={colDef.placeholder}
                 value={val}
-                onChange={(e) => onFilterChange(colKey, e.target.value)}
+                onChange={(e) => handleInputChange(colKey, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(colKey, e)}
               />
             </div>
           );
