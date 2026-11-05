@@ -263,7 +263,46 @@ export const facLensService = {
         error: null,
       };
     } catch (err) {
-      console.error('Failed to fetch from Supabase:', err);
+      console.warn('Supabase fetch failed, attempting backend fallback:', err.message);
+
+      // Robust fallback to backend API (superetlapi.vercel.app)
+      try {
+        const envUrl = import.meta.env.VITE_API_BASE_URL || 'https://superetlapi.vercel.app';
+        let base = envUrl.replace(/\/+$/, '');
+        if (base.endsWith('/api')) base = base.slice(0, -4);
+
+        const params = new URLSearchParams({
+          tab,
+          page: String(page),
+          limit: String(safeLimit),
+        });
+        if (filters.facCode) params.append('fac_code', filters.facCode);
+        if (filters.companyName) params.append('company_name', filters.companyName);
+        if (filters.vesselName) params.append('vessel_name', filters.vesselName);
+
+        const backendRes = await fetch(`${base}/api/table-data?${params.toString()}`);
+        if (backendRes.ok) {
+          const backendData = await backendRes.json();
+          const fallbackCols = backendData.columns && backendData.columns.length > 0 
+            ? backendData.columns 
+            : inferColumns(backendData.data[0] || null, tab);
+
+          return {
+            data: backendData.data || [],
+            columns: fallbackCols,
+            total: backendData.total || (backendData.data || []).length,
+            page: backendData.page || page,
+            limit: backendData.limit || safeLimit,
+            totalPages: backendData.totalPages || 1,
+            tableName,
+            tableId: tab,
+            error: null,
+          };
+        }
+      } catch (backendErr) {
+        console.error('Backend fallback also failed:', backendErr);
+      }
+
       return {
         data: [],
         columns: [],
