@@ -87,6 +87,8 @@ export default function App() {
   const [tableColumns, setTableColumns] = useState([]);
   const [availableTables, setAvailableTables] = useState(TABLE_CONFIG);
   const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
   const [, startTransition] = useTransition();
 
@@ -211,14 +213,11 @@ export default function App() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const currentPage = pagination.page || 1;
-      const currentLimit = pagination.limit || 50;
-
       const response = await facLensService.getTableData({
         tab: selectedTableTab,
         filters,
-        page: currentPage,
-        limit: currentLimit,
+        page: 1,
+        limit: 50,
       });
 
       if (response.error) {
@@ -228,10 +227,13 @@ export default function App() {
       }
 
       startTransition(() => {
-        setTableData(response.data || []);
+        const rows = response.data || [];
+        setTableData(rows);
         setTableColumns(response.columns || []);
+        setHasMore(rows.length >= 50);
         setPagination((prev) => ({
           ...prev,
+          page: 1,
           total: response.total || 0,
           totalPages: response.totalPages || 1,
         }));
@@ -241,7 +243,36 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [selectedTableTab, filters, pagination.page, pagination.limit]);
+  }, [selectedTableTab, filters]);
+
+  // Seamless background pagination: loads next 50 rows when scrolling near bottom
+  const loadMore = useCallback(async () => {
+    if (loading || isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    try {
+      const nextPage = Math.floor(tableData.length / 50) + 1;
+      const response = await facLensService.getTableData({
+        tab: selectedTableTab,
+        filters,
+        page: nextPage,
+        limit: 50,
+      });
+
+      const newRows = response.data || [];
+      if (newRows.length > 0) {
+        startTransition(() => {
+          setTableData((prev) => [...prev, ...newRows]);
+          setHasMore(newRows.length >= 50);
+        });
+      } else {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.warn('Auto background load failed:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [loading, isLoadingMore, hasMore, tableData.length, selectedTableTab, filters]);
 
   useEffect(() => {
     if (activeTab === 'dashboard') {
@@ -576,6 +607,9 @@ export default function App() {
               onRenameTab={handleRenameTab}
               onDeleteTable={handleDeleteTable}
               isExporting={isExporting}
+              onLoadMore={loadMore}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
             />
           )}
 

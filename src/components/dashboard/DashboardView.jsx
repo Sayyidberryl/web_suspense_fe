@@ -35,6 +35,9 @@ export default function DashboardView({
   onRenameTab,
   onDeleteTable,
   isExporting = false,
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
@@ -86,15 +89,15 @@ export default function DashboardView({
             onRemoveFilter={onRemoveFilter}
           />
 
-          {/* ③④⑤ Data Table — column header sticky, rows scroll, pagination footer static */}
+          {/* ③④ Data Table — column header sticky, rows scroll with clean auto background pagination */}
           <DataTable
             data={tableData}
             columns={tableColumns}
             loading={loading}
             activeTab={selectedTableTab}
-            pagination={pagination}
-            onPageChange={onPageChange}
-            onLimitChange={onLimitChange}
+            onLoadMore={onLoadMore}
+            hasMore={hasMore}
+            isLoadingMore={isLoadingMore}
           />
         </>
       )}

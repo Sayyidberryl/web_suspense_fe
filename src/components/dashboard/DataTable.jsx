@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Database, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import React, { useMemo, useRef, useEffect } from 'react';
+import { Database } from 'lucide-react';
 
 /**
  * Dynamic DataTable Component
  * 100% Dynamic: Column definitions are read from data/metadata props at runtime.
  * Zero hardcoded columns.
- * Supports server-side pagination with configurable page size (default 50 rows).
+ * Clean minimalist design: Pure data rows with automatic background pagination (infinite scroll).
+ * Zero pagination control bars or buttons cluttering the view.
  */
 
 // Helper to generate dynamic columns from a sample row if no metadata provided
@@ -36,23 +37,28 @@ export default function DataTable({
   columns: propColumns = [],
   loading = false,
   activeTab = 'acceptance',
-  pagination = { page: 1, limit: 50, total: 0, totalPages: 1 },
-  onPageChange,
-  onLimitChange
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
 }) {
-  const tableTopRef = useRef(null);
+  const sentinelRef = useRef(null);
 
-  // Synchronize local page input with active page prop
-  const currentPage = pagination.page || 1;
-  const currentLimit = pagination.limit || 50;
-  const totalRecords = pagination.total || 0;
-  const totalPages = Math.max(1, pagination.totalPages || Math.ceil((totalRecords || 1) / currentLimit));
-
-  const [pageInput, setPageInput] = useState(currentPage);
-
+  // Automatic infinite scroll in background: loads next 50 rows seamlessly 300px before reaching the end
   useEffect(() => {
-    setPageInput(currentPage);
-  }, [currentPage]);
+    if (!hasMore || loading || isLoadingMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && onLoadMore) {
+          onLoadMore();
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
+    }
+    return () => observer.disconnect();
+  }, [hasMore, loading, isLoadingMore, onLoadMore]);
 
   // Resolve dynamic columns: priority to props from runtime API, fallback to auto-inferred
   const columns = useMemo(() => {
@@ -64,25 +70,6 @@ export default function DataTable({
     }
     return [];
   }, [propColumns, data]);
-
-  const handlePageChangeInternal = (newPage) => {
-    const target = Math.max(1, Math.min(newPage, totalPages));
-    if (target !== currentPage && onPageChange) {
-      onPageChange(target);
-      if (tableTopRef.current) {
-        tableTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }
-  };
-
-  const handlePageInputSubmit = () => {
-    const parsed = parseInt(pageInput, 10);
-    if (!isNaN(parsed) && parsed >= 1 && parsed <= totalPages) {
-      handlePageChangeInternal(parsed);
-    } else {
-      setPageInput(currentPage);
-    }
-  };
 
   const renderCellValue = (row, col) => {
     let val = row[col.key];
@@ -156,11 +143,8 @@ export default function DataTable({
     return <span>{String(val)}</span>;
   };
 
-  const startRecord = totalRecords > 0 ? (currentPage - 1) * currentLimit + 1 : 0;
-  const endRecord = totalRecords > 0 ? Math.min(currentPage * currentLimit, totalRecords) : data.length;
-
   return (
-    <div className="table-card-container" ref={tableTopRef} style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="table-card-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="table-responsive-wrapper" style={{ overflowX: 'auto', width: '100%', flex: 1 }}>
         <table className="fac-table" style={{ minWidth: Math.max(900, columns.length * 140) }}>
           <thead>
@@ -184,23 +168,42 @@ export default function DataTable({
                     Memuat Data...
                   </div>
                   <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
-                    Mengambil {currentLimit} baris untuk tabel: <strong>{activeTab}</strong>
+                    Menyiapkan data tabel: <strong>{activeTab}</strong>
                   </span>
                 </td>
               </tr>
             ) : data.length > 0 ? (
-              data.map((row, i) => (
-                <tr key={row.id || i}>
-                  <td style={{ textAlign: 'center' }}>
-                    <div className="row-checkbox" />
-                  </td>
-                  {columns.map((col) => (
-                    <td key={col.key} style={{ whiteSpace: 'nowrap' }}>
-                      {renderCellValue(row, col)}
+              <>
+                {data.map((row, i) => (
+                  <tr key={row.id || i}>
+                    <td style={{ textAlign: 'center' }}>
+                      <div className="row-checkbox" />
                     </td>
-                  ))}
-                </tr>
-              ))
+                    {columns.map((col) => (
+                      <td key={col.key} style={{ whiteSpace: 'nowrap' }}>
+                        {renderCellValue(row, col)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                {/* Invisible sentinel for automatic background pagination */}
+                {hasMore && (
+                  <tr ref={sentinelRef} style={{ height: 1 }}>
+                    <td colSpan={columns.length + 1} style={{ padding: 0, border: 'none', height: 1 }} />
+                  </tr>
+                )}
+                {/* Subtle bottom indicator when fetching next batch */}
+                {isLoadingMore && (
+                  <tr>
+                    <td colSpan={columns.length + 1} style={{ padding: '10px 16px', textAlign: 'center', background: '#f8fafc', color: '#64748b', fontSize: '0.78rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <span className="chunk-pulse-dot" />
+                        <span>Memuat baris selanjutnya...</span>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
             ) : (
               <tr>
                 <td colSpan={Math.max(1, columns.length + 1)} style={{ padding: '56px 24px', textAlign: 'center' }}>
@@ -232,119 +235,6 @@ export default function DataTable({
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Corporate Server-side Pagination Footer */}
-      <div className="table-pagination-footer" style={{ borderTop: '1px solid #e2e8f0', background: '#ffffff', padding: '10px 18px' }}>
-        {/* Left: Rows per page selector and item range info */}
-        <div className="pagination-left" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div className="pagination-limit-selector" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 500 }}>Baris:</span>
-            <select
-              className="limit-select"
-              value={currentLimit}
-              onChange={(e) => onLimitChange && onLimitChange(Number(e.target.value))}
-              disabled={loading}
-              style={{
-                border: '1px solid #cbd5e1',
-                borderRadius: '5px',
-                padding: '4px 8px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                color: '#1e293b',
-                background: '#f8fafc',
-                cursor: 'pointer'
-              }}
-            >
-              <option value={25}>25 / hal</option>
-              <option value={50}>50 / hal</option>
-              <option value={100}>100 / hal</option>
-              <option value={200}>200 / hal</option>
-            </select>
-          </div>
-
-          <div className="pagination-info" style={{ fontSize: '0.82rem', color: '#64748b' }}>
-            Menampilkan <strong style={{ color: '#0f172a' }}>{startRecord.toLocaleString('id-ID')}</strong> – <strong style={{ color: '#0f172a' }}>{endRecord.toLocaleString('id-ID')}</strong> dari <strong style={{ color: '#0f172a' }}>{totalRecords.toLocaleString('id-ID')}</strong> baris
-          </div>
-        </div>
-
-        {/* Right: Page Navigation Buttons */}
-        <div className="pagination-right" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button
-            type="button"
-            className="btn-page-nav"
-            onClick={() => handlePageChangeInternal(1)}
-            disabled={currentPage <= 1 || loading}
-            title="Halaman Pertama"
-            style={{ padding: '5px 8px', display: 'flex', alignItems: 'center' }}
-          >
-            <ChevronsLeft size={16} />
-          </button>
-
-          <button
-            type="button"
-            className="btn-page-nav"
-            onClick={() => handlePageChangeInternal(currentPage - 1)}
-            disabled={currentPage <= 1 || loading}
-            title="Halaman Sebelumnya"
-            style={{ padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 4 }}
-          >
-            <ChevronLeft size={16} />
-            <span>Prev</span>
-          </button>
-
-          {/* Quick Page Jump */}
-          <div className="page-indicator" style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '0 4px', fontSize: '0.82rem', color: '#475569' }}>
-            <span>Hal.</span>
-            <input
-              type="number"
-              min={1}
-              max={totalPages}
-              value={pageInput}
-              onChange={(e) => setPageInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handlePageInputSubmit();
-              }}
-              onBlur={handlePageInputSubmit}
-              disabled={loading}
-              style={{
-                width: 58,
-                textAlign: 'center',
-                padding: '4px 6px',
-                fontSize: '0.82rem',
-                border: '1px solid #cbd5e1',
-                borderRadius: '5px',
-                fontWeight: 700,
-                color: '#1e293b',
-                background: '#ffffff'
-              }}
-            />
-            <span>dari <strong>{totalPages.toLocaleString('id-ID')}</strong></span>
-          </div>
-
-          <button
-            type="button"
-            className="btn-page-nav"
-            onClick={() => handlePageChangeInternal(currentPage + 1)}
-            disabled={currentPage >= totalPages || loading}
-            title="Halaman Berikutnya"
-            style={{ padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 4 }}
-          >
-            <span>Next</span>
-            <ChevronRight size={16} />
-          </button>
-
-          <button
-            type="button"
-            className="btn-page-nav"
-            onClick={() => handlePageChangeInternal(totalPages)}
-            disabled={currentPage >= totalPages || loading}
-            title="Halaman Terakhir"
-            style={{ padding: '5px 8px', display: 'flex', alignItems: 'center' }}
-          >
-            <ChevronsRight size={16} />
-          </button>
-        </div>
       </div>
     </div>
   );
