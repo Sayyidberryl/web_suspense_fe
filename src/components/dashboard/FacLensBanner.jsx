@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SlidersHorizontal, Check, RotateCcw } from 'lucide-react';
+import { SlidersHorizontal, Check, RotateCcw, X } from 'lucide-react';
 
 // Definitions of all available filterable columns for each table tab
 // Requirements: PLA & SLA: fac code, cedant name, insured loss name, vessel loss name, vessel loss code
@@ -45,6 +45,7 @@ const DEFAULT_COLUMNS = {
 export default function FacLensBanner({
   filters = {},
   onFilterChange,
+  onClearFilters,
   activeTab = 'acceptance'
 }) {
   const availableColumns = TABLE_COLUMN_DEFINITIONS[activeTab] || TABLE_COLUMN_DEFINITIONS.acceptance;
@@ -57,10 +58,15 @@ export default function FacLensBanner({
   const [localValues, setLocalValues] = useState(filters);
   const debounceTimerRef = useRef({});
 
-  // Sync local values when filters prop changes (e.g. from Clear Filters or Chip remove)
+  // Sync local values when filters prop changes (e.g. from Clear Filters)
   useEffect(() => {
     setLocalValues(filters);
   }, [filters]);
+
+  const hasAnyFilter = Object.entries(filters).some(([k, v]) => {
+    if (k === 'selectedFile') return false;
+    return Boolean(v && typeof v === 'string' && v.trim());
+  });
 
   const getDisplayValue = (colKey) => {
     if (colKey === 'vesselName' || colKey === 'vesselLossName') {
@@ -100,6 +106,37 @@ export default function FacLensBanner({
     debounceTimerRef.current[colKey] = setTimeout(() => {
       onFilterChange(colKey, val);
     }, 350);
+  };
+
+  const handleClearField = (colKey) => {
+    if (debounceTimerRef.current[colKey]) {
+      clearTimeout(debounceTimerRef.current[colKey]);
+    }
+    setLocalValues((prev) => {
+      const next = { ...prev, [colKey]: '' };
+      if (colKey === 'vesselName' || colKey === 'vesselLossName') {
+        next.vesselName = '';
+        next.vesselLossName = '';
+      }
+      if (colKey === 'vesselCode' || colKey === 'vesselLossCode') {
+        next.vesselCode = '';
+        next.vesselLossCode = '';
+      }
+      if (colKey === 'insuredName' || colKey === 'insuredLossName') {
+        next.insuredName = '';
+        next.insuredLossName = '';
+      }
+      return next;
+    });
+    onFilterChange(colKey, '');
+  };
+
+  const handleResetAll = () => {
+    setLocalValues({});
+    Object.values(debounceTimerRef.current).forEach((t) => clearTimeout(t));
+    if (onClearFilters) {
+      onClearFilters();
+    }
   };
 
   const handleKeyDown = (colKey, e) => {
@@ -160,7 +197,7 @@ export default function FacLensBanner({
 
   return (
     <div className="fac-lens-banner">
-      {/* Banner Header — centered title */}
+      {/* Banner Header — centered title, subtle Reset Filter button on the right when active */}
       <div className="banner-header-row">
         <div className="banner-title-group" style={{ flex: 1, textAlign: 'center' }}>
           <h2 className="banner-title">FAC LENS</h2>
@@ -168,9 +205,21 @@ export default function FacLensBanner({
             Facultative Data Intelligence &amp; Analytics Dashboard
           </p>
         </div>
+
+        {hasAnyFilter && (
+          <button
+            type="button"
+            className="btn-banner-reset-filters"
+            onClick={handleResetAll}
+            title="Reset semua filter ke kondisi awal"
+          >
+            <RotateCcw size={13} />
+            <span>Reset Filter</span>
+          </button>
+        )}
       </div>
 
-      {/* Filter Inputs Grid — fixed 5 columns, NO X button on each field */}
+      {/* Filter Inputs Grid — 5 clean columns with inline clear icon */}
       <div
         className="banner-filters-dynamic"
         style={{
@@ -189,14 +238,26 @@ export default function FacLensBanner({
           return (
             <div key={colKey} className={`banner-filter-group ${hasVal ? 'has-value' : ''}`}>
               <span className="banner-filter-label">{colDef.label}</span>
-              <input
-                type="text"
-                className="banner-filter-input"
-                placeholder={colDef.placeholder}
-                value={val}
-                onChange={(e) => handleInputChange(colKey, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(colKey, e)}
-              />
+              <div className="banner-filter-input-wrap">
+                <input
+                  type="text"
+                  className="banner-filter-input"
+                  placeholder={colDef.placeholder}
+                  value={val}
+                  onChange={(e) => handleInputChange(colKey, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(colKey, e)}
+                />
+                {hasVal && (
+                  <button
+                    type="button"
+                    className="banner-filter-clear-btn"
+                    onClick={() => handleClearField(colKey)}
+                    title={`Hapus filter ${colDef.label}`}
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

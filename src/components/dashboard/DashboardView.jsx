@@ -1,7 +1,6 @@
 import React from 'react';
 import SheetTabBar from './SheetTabBar';
 import FacLensBanner from './FacLensBanner';
-import TabNavigation from './TabNavigation';
 import DataTable from './DataTable';
 
 /**
@@ -79,14 +78,8 @@ export default function DashboardView({
           <FacLensBanner
             filters={filters}
             onFilterChange={onFilterChange}
-            activeTab={selectedTableTab}
-          />
-
-          {/* Active filter chips (only when filters active) */}
-          <TabNavigation
-            filters={filters}
             onClearFilters={onClearFilters}
-            onRemoveFilter={onRemoveFilter}
+            activeTab={selectedTableTab}
           />
 
           {/* ③④ Data Table — column header sticky, rows scroll with clean auto background pagination */}
