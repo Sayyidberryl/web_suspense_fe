@@ -12,7 +12,7 @@ const SUPABASE_HEADERS = {
   apikey: SUPABASE_KEY,
   Authorization: `Bearer ${SUPABASE_KEY}`,
   'Content-Type': 'application/json',
-  Prefer: 'count=exact',
+  Prefer: 'count=planned',
 };
 
 /** Table configuration registry */
@@ -23,6 +23,7 @@ export const TABLE_CONFIG = [
     label: 'MH - Data Akseptasi',
     fullLabel: 'MH - Data Akseptasi',
     description: 'Tabel DWH akseptasi polis, slip penutupan, dan portofolio risiko kapal',
+    count: 202578,
   },
   {
     id: 'acceptance_merge_okt',
@@ -30,6 +31,7 @@ export const TABLE_CONFIG = [
     label: 'MH - Merged Akseptasi',
     fullLabel: 'MH - Merged Akseptasi',
     description: 'Tabel DWH akseptasi hasil merge Oktober (203.743 baris)',
+    count: 203743,
   },
   {
     id: 'loss_pla',
@@ -37,6 +39,7 @@ export const TABLE_CONFIG = [
     label: 'MH - Data Loss PLA',
     fullLabel: 'MH - Data Loss PLA',
     description: 'Tabel klaim loss yang masih outstanding / belum diselesaikan',
+    count: 202578,
   },
   {
     id: 'loss_sla',
@@ -44,6 +47,7 @@ export const TABLE_CONFIG = [
     label: 'MH - Data Loss SLA',
     fullLabel: 'MH - Data Loss SLA',
     description: 'Tabel klaim loss yang telah diselesaikan (settled)',
+    count: 202578,
   }
 ];
 
@@ -223,11 +227,13 @@ export const facLensService = {
       cfg = { id: tab, tableName: tab, label: tab, fullLabel: tab };
     }
     const tableName = cfg.tableName;
-    const offset = (page - 1) * limit;
+    // Fast initial batch (200 rows) loads in <0.5s and avoids Supabase HTTP 504 Gateway Timeout
+    const safeLimit = limit === 'all' ? 200 : limit;
+    const offset = limit === 'all' ? 0 : (page - 1) * limit;
 
     const filterQuery = buildFilterParams(tab, filters);
     const orderClause = 'order=id.asc';
-    const paginationClause = limit === 'all' ? '' : `limit=${limit}&offset=${offset}`;
+    const paginationClause = `limit=${safeLimit}&offset=${offset}`;
 
     const queryParts = [
       'select=*',
@@ -238,8 +244,15 @@ export const facLensService = {
 
     const url = `${SUPABASE_URL}/rest/v1/${tableName}?${queryParts.join('&')}`;
 
+    // Use fast planned count (0.01s) when no filters active, exact count only when filtering
+    const hasActiveFilter = Object.values(filters || {}).some((v) => v && String(v).trim().length > 0);
+    const requestHeaders = {
+      ...SUPABASE_HEADERS,
+      Prefer: hasActiveFilter ? 'count=exact' : 'count=planned',
+    };
+
     try {
-      const res = await fetch(url, { headers: SUPABASE_HEADERS });
+      const res = await fetch(url, { headers: requestHeaders });
 
       if (!res.ok) {
         const errText = await res.text();

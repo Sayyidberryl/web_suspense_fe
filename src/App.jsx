@@ -218,6 +218,12 @@ export default function App() {
         limit: 'all'
       });
 
+      if (response.error) {
+        setConnectionError(response.error);
+      } else {
+        setConnectionError(null);
+      }
+
       startTransition(() => {
         setTableData(response.data || []);
         setTableColumns(response.columns || []);
